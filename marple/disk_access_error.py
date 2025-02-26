@@ -1,0 +1,3 @@
+
+class DiskAccessorError(Exception):
+    pass

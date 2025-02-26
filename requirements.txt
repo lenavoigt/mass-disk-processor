@@ -1,0 +1,6 @@
+libewf-python
+# pytsk3==20230125
+pytsk3
+python-registry
+python-evtx
+xmltodict

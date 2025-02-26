@@ -1,0 +1,160 @@
+# from distutils.command.install import value
+
+import os
+import re
+
+from Registry import Registry
+
+import mdp_lib.plugin_result
+from mdp_lib.disk_image_info import TargetDiskImage
+
+
+class WinBrowsers(object):
+    name = 'win_browsers'
+    description = 'Gets information about the installed browsers and default browsers (currently only supports Edge, Chrome, Firefox).'
+    include_in_data_table = True
+
+    def process_disk(self, target_disk_image: TargetDiskImage):
+
+        disk_image = target_disk_image.accessor
+        files = disk_image.files
+
+        temp_filename = 'export.bin'
+        edge_present = False
+        edge_default = False
+        chrome_present = False
+        chrome_default = False
+        firefox_present = False
+        firefox_default = False
+        registry_present = False
+
+        for each_file in files:
+
+            # Check for installed browsers in registry
+            if re.search('Windows/System32/config/SOFTWARE$', each_file.full_path, re.IGNORECASE) is not None:
+                # print('reg found (SOFTWARE)')
+                # print(each_file.full_path)
+
+                f = open(temp_filename, 'wb')
+                f.write(each_file.read())
+                f.close()
+
+                # TODO: check filesize is > 0
+                try:
+                    reg = Registry.Registry(temp_filename)
+                except Exception: # TODO: work out what the correct exception to handle is!
+                    print('error opening registry file: {} ({} bytes)'.format(each_file.full_path, each_file.file_size))
+                    break
+
+                relevant_registry_keys = ["Microsoft\\Windows\\CurrentVersion\\Uninstall",
+                                          "Microsoft\\Windows\\CurrentVersion\\App Paths"]
+
+                for key in relevant_registry_keys:
+                    try:
+                        reg_key = reg.open(key)
+                        # print(f"Opened registry key: {key}")
+                        registry_present = True
+
+                        for application in reg_key.subkeys():
+                            application_name = application.name().lower()
+                            # print(f"Found application: {application_name}")
+
+                            if "msedge" in application_name or "iexplore" in application_name:
+                                edge_present = True
+                                # print('Edge detected!')
+                            elif "chrome" in application_name:
+                                chrome_present = True
+                                # print('Chrome detected!')
+                            elif "firefox" in application_name or "mozilla" in application_name:
+                                firefox_present = True
+                                # print('Firefox detected!')
+                            # else:
+                            #     print("Unknown browser detected")
+                    except Registry.RegistryKeyNotFoundException:
+                        # print(f"Registry key not found: {key}")
+                        break
+
+
+                os.remove(temp_filename)
+
+
+            # Check for default browsers in registry
+            if re.search('NTUSER.DAT$', each_file.full_path, re.IGNORECASE) is not None:
+                # print('reg found (ntuser.dat)')
+                # print(each_file.full_path)
+
+                f = open(temp_filename, 'wb')
+                f.write(each_file.read())
+                f.close()
+
+                # TODO: check filesize is > 0
+                try:
+                    reg = Registry.Registry(temp_filename)
+                except Exception: # TODO: work out what the correct exception to handle is!
+                    print('error opening registry file: {} ({} bytes)'.format(each_file.full_path, each_file.file_size))
+                    break
+
+
+                # NOTE: Currently only going with one registry key
+                relevant_registry_keys = ["Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice",
+                                          #"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.html\\UserChoice",
+                                          # "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" # for Windows XP
+                                          ]
+
+                for key in relevant_registry_keys:
+                    try:
+                        reg_key = reg.open(key)
+                        # print(f"Opened registry key: {key}")
+                        registry_present = True
+                        if "Internet Settings" in key:
+                            browser_value = reg_key.value("User Agent").value().lower()
+                        else:
+                            browser_value = reg_key.value("ProgId").value().lower()
+
+                        if "firefox" in browser_value or "mozilla" in browser_value:
+                            # print("Default browser is Firefox")
+                            firefox_default = True
+                        elif "chrome" in browser_value:
+                            # print("Default browser is Chrome")
+                            chrome_default = True
+                        elif "msedge" in browser_value or "iexplore" in browser_value:
+                            # print("Default browser is Edge or Internet Explorer")
+                            edge_default = True
+                        # else:
+                            # print("Unknown browser detected")
+                    except Registry.RegistryKeyNotFoundException:
+                        # print(f"Registry key not found: {key}")
+                        #break
+                        pass
+
+                os.remove(temp_filename)
+
+        if not registry_present:
+            edge_present = None
+            edge_default = None
+            chrome_present = None
+            chrome_default = None
+            firefox_present = None
+            firefox_default = None
+
+
+        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
+
+        res.results = {'edge_present': edge_present,
+                       'chrome_present': chrome_present,
+                       'firefox_present': firefox_present,
+                       'edge_default': edge_default,
+                       'chrome_default': chrome_default,
+                       'firefox_default': firefox_default
+                       }
+        return res
+
+
+# just a way to test a plugin quickly
+if __name__ == '__main__':
+    a = WinBrowsers()
+
+    test_image_path = 'path to disk image'
+    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
+    res = a.process_disk(disk_image_object)
+    print(res)
