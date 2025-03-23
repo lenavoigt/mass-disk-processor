@@ -46,10 +46,10 @@ The target folder needs to have a specific format.
 
 ```
 target_folder_of_disk_images
-- folder_case_1
+- folder_of_case-1
     - data
         - disk_image.dd
-- folder_case_2
+- folder_of_case-2
     - data
         - another_disk_image_1.e01
         - another_disk_image_2.e01
