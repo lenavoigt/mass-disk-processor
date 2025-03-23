@@ -16,13 +16,13 @@ In the drive, we also provide **Plaso timelines** for these disk images.
 To retrieve metrics from disk image datasets using MDP, use the following command:
 
 ```
-mdp.py target_folder_of_disk_images
+python mdp.py target_folder_of_disk_images
 ```
 
 We have provided two (very simple) test disks in the Testdisks/ folder. If you'd like to test running MDP, you can try:
 
 ```
-mdp.py TestDisks
+python mdp.py TestDisks
 ```
 
 You can also provide an absolute path to the target folder containing the disk image dataset.
