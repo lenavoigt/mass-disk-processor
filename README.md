@@ -5,7 +5,7 @@ MDP is a tool that automates the collection of metrics from large sets of disk i
 MDP will be presented at [DFRWS EU 2025](https://dfrws.org/conferences/dfrws-eu-2025/).
 
 If you'd like to use MDP, please cite it as:
-> Voigt, L., Freiling, F., & Hargreaves, C.J. (2025). A metrics-based look at disk images: Insights and applications. Forensic Science International: Digital Investigation, XX, 301874. https://doi.org/10.1016/j.fsidi.2025.301874
+> Voigt, L., Freiling, F., & Hargreaves, C.J. (2025). A metrics-based look at disk images: Insights and applications. Forensic Science International: Digital Investigation, 52, 301874. https://doi.org/10.1016/j.fsidi.2025.301874
 
 In our paper, we collected metrics for publicly available, synthetic, scenario-based disk images. You can find a list of disk images considered, a metric summary table as well as individual datasheets for the disk images [in our FAUbox drive](TODO).
 
