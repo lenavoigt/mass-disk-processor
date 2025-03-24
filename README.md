@@ -33,7 +33,7 @@ Before you can run MDP, you need to:
 
 0. Set up a virtual environment and install the dependencies from `requirements.txt`.
 1. Put your disk image dataset in the required folder structure.
-2. Create a configuration file `config.py`. *(Optionally)* modify the configuration.
+2. Create a configuration file `config.py`. *(Optionally)* Modify the configuration.
 3. *(Optionally)* Prepare a Plaso environment.
 
 These steps are detailed below.
@@ -81,16 +81,14 @@ $ cp mdp_lib/config_example.py mdp_lib/config.py
 ```
 
 Afterwards, the default configuration in `config.py` can be modified if you want to customize processing options. You can modify the following settings:
-- Absolute path to a National Software Reference Library (NSRL) Reference Data Set (RDS): Without this option the non-NSRL file count plugin is not available.
+- Absolute path to a National Software Reference Library (NSRL) Reference Data Set (RDS): Without this option, the non-NSRL file count plugin is not available.
 - Preprocessing options:
-    - Enable/disable population of file signatures (True/False): Without this option the file signature mismatch count plugin is not available.
-    - Enable/disable file hash computation (True/False): Without this option the non-NSRL file count plugin is not available.
+    - Enable/disable population of file signatures (True/False): Without this option, the file signature mismatch count plugin is not available.
+    - Enable/disable file hash computation (True/False): Without this option, the non-NSRL file count plugin is not available.
     - Set maximum file size for hashing
 - Parameters required for using Plaso (see below)
 
 ## Enabling the Usage of Plaso
-
-to use Plaso you will need to configure Plaso in a virtual environment, and provide in the `config.py` file where that environment is (`path_to_venv_python`) along with the Plaso scripts (`path_to_plaso_scripts`).
 
 In MDP's current version, to use Plaso, you need to configure it in a virtual environment and specify its path in the `config.py` file. In `config.py`, set the following two parameters:
 - `path_to_venv_python`: Path to the virtual environment’s `activate` script.
@@ -112,6 +110,8 @@ path_to_plaso_scripts = '<absolute-path-tp-MDP>/.venv/lib/python3.10/site-packag
 ```
 Note: If you're using a different Python version, adjust the path to match the version you're using.
 
+You can then activate the Plaso Plugin by uncommenting it in the `plugin_classes` list in `mdp.py`.
+
 # Results
 
 MDP produces the following results:
@@ -130,5 +130,5 @@ To include the plugin in your metric collection runs, in `mdp.py` you need to:
 
 # Specifying a Plugin Order for Metric Collection Runs
 
-If you'd like to run MDP plugins in a specific oder, you need to specify the plugin order in the `plugin_order_config.py` (using the specified plugin names).
+If you'd like to run MDP plugins in a specific order, you need to specify the plugin order in the `plugin_order_config.py` (using the specified plugin names).
 
