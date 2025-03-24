@@ -33,55 +33,85 @@ Before you can run MDP, you need to:
 
 0. Set up a virtual environment and install the dependencies from `requirements.txt`.
 1. Put your disk image dataset in the required folder structure.
-2. Create a config.py.
+2. *(Optionally)* Modify the configuration file `config.py`.
 3. *(Optionally)* Prepare a Plaso environment.
 
 These steps are detailed below.
 
-**Note**: MDP was developed and tested on Ubuntu 22.04 using Python 3.10.
+**Note**: MDP was developed and tested on Ubuntu 22.04 using Python 3.10. The instructions below refer to this environment.
+
+## Virtual Environment Setup and Dependency Installation
+
+We recommend setting up a virtual environment to use MDP and installing the dependencies with the following commands:
+
+```
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+```
+Alternatively, you can use an IDE (e.g. PyCharm), which can handle environment setup and dependency installation.
 
 ## Required Folder Structure for the Disk Image Dataset
 
-The target folder needs to have a specific format. 
-
+The target folder containing the disk images to be processed must follow this structure:
 ```
-target_folder_of_disk_images
-- folder_of_case-1
-    - data
-        - disk_image.dd
-- folder_of_case-2
-    - data
-        - another_disk_image_1.e01
-        - another_disk_image_2.e01
-        ...
-...
+target_folder_of_disk_images/
+│── folder_of_case-1/
+│   ├── data/
+│   │   └── disk_image.dd
+│
+│── folder_of_case-2/
+│   ├── data/
+│   │   ├── another_disk_image_1.e01
+│   │   ├── another_disk_image_2.e01
+│   │   └── ...
+│
+│── ...
 ```
+Each case folder (folder_of_case-1, folder_of_case-2, etc.) must contain a data subfolder, which holds disk image files of type .dd or EWF (.e01, etc.).
+*Note*: 
+- Currently, MDP does not support split dd files. 
+- MDP does support split EWF (.e01, .e02, etc.) files.
 
 ## Modification of `config.py`
 
-The file `config_example.py` is provided. Before you can run MDP you need to copy it to `config.py`:
-
-```
-cp mdp_lib/config_example.py mdp_lib/config.py
-```
-
-You **can** adjust the following values:
-- a path to a National Software Reference Library (NSRL) Reference Data Set (RDS)
-- preprocessing options: 
-  - population of file signatures (True/False)
-  - computation of file hashes (True/False), maximum file size to be hashed
-- parameters required for the use of Plase (see below)
+The default configuration in `config.py` can be modified if you want to customize processing options. You can modify the following settings:
+- Absolute path to a National Software Reference Library (NSRL) Reference Data Set (RDS): Without this option the non-NSRL file count plugin is not available.
+- Preprocessing options:
+    - Enable/disable population of file signatures (True/False): Without this option the file signature mismatch count plugin is not available.
+    - Enable/disable file hash computation (True/False): Without this option the non-NSRL file count plugin is not available.
+    - Set maximum file size for hashing
+- Parameters required for using Plaso (see below)
 
 ## Enabling the Usage of Plaso
 
-To use Plaso you will need to configure Plaso in a virtual environment, and provide in the `config.py` file where that environment is (`path_to_venv_python`) along with the Plaso scripts (`path_to_plaso_scripts`).
+to use Plaso you will need to configure Plaso in a virtual environment, and provide in the `config.py` file where that environment is (`path_to_venv_python`) along with the Plaso scripts (`path_to_plaso_scripts`).
+
+In MDP's current version, to use Plaso, you need to configure it in a virtual environment and specify its path in the `config.py` file. In `config.py`, set the following two parameters:
+- `path_to_venv_python`: Path to the virtual environment’s `activate` script.
+- `path_to_plaso_scripts`: Path to the Plaso scripts.
+
+
+One way to do this is **setting up Plaso in MDP's virtual environment**:
+```
+    source venv/bin/activate
+    pip install plaso
+```
+Alternatively, you can [install Plaso from source](https://github.com/log2timeline/plaso).
+
+If you have installed Plaso in MDP's virtual environment, you can set the following values in MDP's `config.py`:
+
+```
+    path_to_venv_python = '<absolute-path-tp-MDP>/.venv/bin/activate'
+    path_to_plaso_scripts = '<absolute-path-tp-MDP>/.venv/lib/python3.10/site-packages/plaso/scripts'
+```
+Note: If you're using a different Python version, adjust the path to match the version you're using.
 
 # Results
 
 MDP produces the following results:
 - `data_table.tsv` and `summary_dict.json` containing the results for each disk image in the dataset of any plugin flagged for inclusion in the summary.
 - `results_<plugin-name>.txt` containing more detailed results (including plugin name, plugin description, full path of the source disk image file, and creation time) of each plugin within the disk image folders.
-
 
 # Creating new Plugins
 
