@@ -33,7 +33,7 @@ Before you can run MDP, you need to:
 
 0. Set up a virtual environment and install the dependencies from `requirements.txt`.
 1. Put your disk image dataset in the required folder structure.
-2. *(Optionally)* Modify the configuration file `config.py`.
+2. Create a configuration file `config.py`. *(Optionally)* modify the configuration.
 3. *(Optionally)* Prepare a Plaso environment.
 
 These steps are detailed below.
@@ -73,9 +73,14 @@ Each case folder (folder_of_case-1, folder_of_case-2, etc.) must contain a data 
 - Currently, MDP does not support split dd files. 
 - MDP does support split EWF (.e01, .e02, etc.) files.
 
-## Modification of `config.py`
+## Creation and Modification of `config.py`
 
-The default configuration in `config.py` can be modified if you want to customize processing options. You can modify the following settings:
+The file `config_example.py` is provided as a template. Before you can run MDP you need to copy it to `config.py`:
+```
+$ cp mdp_lib/config_example.py mdp_lib/config.py
+```
+
+Afterwards, the default configuration in `config.py` can be modified if you want to customize processing options. You can modify the following settings:
 - Absolute path to a National Software Reference Library (NSRL) Reference Data Set (RDS): Without this option the non-NSRL file count plugin is not available.
 - Preprocessing options:
     - Enable/disable population of file signatures (True/False): Without this option the file signature mismatch count plugin is not available.
