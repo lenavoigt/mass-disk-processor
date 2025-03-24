@@ -16,13 +16,13 @@ In the drive, we also provide **Plaso timelines** for these disk images.
 To retrieve metrics from disk image datasets using MDP, use the following command:
 
 ```
-python mdp.py target_folder_of_disk_images
+$ python mdp.py target_folder_of_disk_images
 ```
 
 We have provided two (very simple) test disks in the Testdisks/ folder. If you'd like to test running MDP, you can try:
 
 ```
-python mdp.py TestDisks
+$ python mdp.py TestDisks
 ```
 
 You can also provide an absolute path to the target folder containing the disk image dataset.
@@ -45,9 +45,9 @@ These steps are detailed below.
 We recommend setting up a virtual environment to use MDP and installing the dependencies with the following commands:
 
 ```
-    python -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
+$ python -m venv venv
+$ source venv/bin/activate
+$ pip install -r requirements.txt
 ```
 Alternatively, you can use an IDE (e.g. PyCharm), which can handle environment setup and dependency installation.
 
@@ -94,16 +94,16 @@ In MDP's current version, to use Plaso, you need to configure it in a virtual en
 
 One way to do this is **setting up Plaso in MDP's virtual environment**:
 ```
-    source venv/bin/activate
-    pip install plaso
+$ source venv/bin/activate
+$ pip install plaso
 ```
 Alternatively, you can [install Plaso from source](https://github.com/log2timeline/plaso).
 
 If you have installed Plaso in MDP's virtual environment, you can set the following values in MDP's `config.py`:
 
 ```
-    path_to_venv_python = '<absolute-path-tp-MDP>/.venv/bin/activate'
-    path_to_plaso_scripts = '<absolute-path-tp-MDP>/.venv/lib/python3.10/site-packages/plaso/scripts'
+path_to_venv_python = '<absolute-path-tp-MDP>/.venv/bin/activate'
+path_to_plaso_scripts = '<absolute-path-tp-MDP>/.venv/lib/python3.10/site-packages/plaso/scripts'
 ```
 Note: If you're using a different Python version, adjust the path to match the version you're using.
 
