@@ -13,7 +13,7 @@ In the drive, we also provide **Plaso timelines** for these disk images.
 
 # Run MDP
 
-To retrieve metrics from disk image datasets using MDP, use the following command:
+To retrieve metrics from disk image datasets using MDP, use the following command in your project's virtual environment:
 
 ```
 $ python mdp.py target_folder_of_disk_images
@@ -45,7 +45,7 @@ These steps are detailed below.
 We recommend setting up a virtual environment to use MDP and installing the dependencies with the following commands:
 
 ```
-$ python -m venv venv
+$ python3 -m venv venv
 $ source venv/bin/activate
 $ pip install -r requirements.txt
 ```
@@ -124,7 +124,7 @@ To create a new plugin it is best to copy one of the existing ones.
 
 To include the plugin in your metric collection runs, in `mdp.py` you need to:
 - import the new plugin 
-- add it to the list named `plugin_classes`, referring to the name of the class within the plugin python file. 
+- add it to the list named `plugin_classes`, referring to the name of the class within the plugin Python file. 
 
 > You should make sure that your plugin always returns the same result fields (returning None for each field where no value was retrieved).
 
