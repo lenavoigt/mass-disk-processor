@@ -94,21 +94,20 @@ In MDP's current version, to use Plaso, you need to configure it in a virtual en
 - `path_to_venv_python`: Path to the virtual environment’s `activate` script.
 - `path_to_plaso_scripts`: Path to the Plaso scripts.
 
-
-One way to do this is **setting up Plaso in MDP's virtual environment**:
+One way to do this is by setting up Plaso in a **separate environment within the MDP project** to avoid dependency conflicts:
 ```
-$ source venv/bin/activate
+$ python3 -m venv plaso-venv
+$ source plaso-venv/bin/activate
 $ pip install plaso
 ```
-Alternatively, you can [install Plaso from source](https://github.com/log2timeline/plaso).
+*Note: If you prefer, you can [install Plaso from source](https://github.com/log2timeline/plaso) instead of using pip.*
 
-If you have installed Plaso in MDP's virtual environment, you can set the following values in MDP's `config.py`:
-
+Then, you can set the following values in MDP's `config.py`:
 ```
-path_to_venv_python = '<absolute-path-tp-MDP>/.venv/bin/activate'
-path_to_plaso_scripts = '<absolute-path-tp-MDP>/.venv/lib/python3.10/site-packages/plaso/scripts'
+path_to_venv_python = '<absolute-path-tp-MDP>/plaso-venv/bin/activate'
+path_to_plaso_scripts = '<absolute-path-tp-MDP>/plaso-venv/lib/python3.10/site-packages/plaso/scripts'
 ```
-Note: If you're using a different Python version, adjust the path to match the version you're using.
+*Note: If you're using a different Python version, adjust the path to match the version you're using.*
 
 You can then activate the Plaso Plugin by uncommenting it in the `plugin_classes` list in `mdp.py`.
 
