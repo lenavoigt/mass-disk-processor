@@ -1,6 +1,6 @@
 # Mass Disk Processor
 
-MDP is a tool that automates the collection of metrics from large sets of disk images by running code and programs against disk image datasets and summarising the results.
+The Mass Disk Processor (MDP) is a tool that automates the collection of metrics from large sets of disk images by running code and programs against disk image datasets and summarising the results.
 
 MDP was created in the scope of our 📄 [academic paper](https://www.sciencedirect.com/science/article/pii/S2666281725000137) that will be presented at [DFRWS EU 2025](https://dfrws.org/conferences/dfrws-eu-2025/). Our paper can be cited as:
 > Voigt, L., Freiling, F., & Hargreaves, C.J. (2025). A metrics-based look at disk images: Insights and applications. Forensic Science International: Digital Investigation, 52, 301874. https://doi.org/10.1016/j.fsidi.2025.301874
