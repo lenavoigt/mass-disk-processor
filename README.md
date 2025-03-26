@@ -90,6 +90,8 @@ Afterwards, the default configuration in `config.py` can be modified if you want
 
 ## Enabling the Usage of Plaso
 
+> ⚠️ The Plaso plugin relies on commands that will only work on POSIX-based systems.
+
 In MDP's current version, to use Plaso, you need to configure it in a virtual environment and specify its path in the `config.py` file. In `config.py`, set the following two parameters:
 - `path_to_venv_python`: Path to the virtual environment’s `activate` script.
 - `path_to_plaso_scripts`: Path to the Plaso scripts.
