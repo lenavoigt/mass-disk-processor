@@ -11,7 +11,7 @@ Also, in [our FAUbox drive](https://faubox.rrze.uni-erlangen.de/getlink/fiSyw7S4
 
 # Run MDP
 
-To retrieve metrics from disk image datasets using MDP, use the following command in your project's virtual environment:
+To retrieve metrics from disk image datasets using MDP, use the following command **in your project's virtual environment**:
 
 ```
 $ python mdp.py target_folder_of_disk_images
@@ -36,7 +36,7 @@ Before you can run MDP, you need to:
 
 These steps are detailed below.
 
-**Note**: MDP was developed and tested on Ubuntu 22.04 using Python 3.10. The instructions below refer to this environment.
+**Note**: MDP was developed and tested on macOS Sequoia and Ubuntu 22.04 using Python 3.10. The instructions below refer to this environment.
 
 ## Virtual Environment Setup and Dependency Installation
 
