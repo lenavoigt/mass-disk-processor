@@ -125,3 +125,7 @@ class RawDiskAccessor(GenericDiskAccessor):
         except OSError:
             return None
 
+    def get_media_size(self):
+        img = pytsk3.Img_Info(self.path_to_image)
+        disk_size_bytes = img.get_size()
+        return disk_size_bytes

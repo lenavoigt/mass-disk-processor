@@ -171,7 +171,12 @@ class EwfDiskAccessor(GenericDiskAccessor):
         for each in self.file_object_paths:
             each.close()
 
-
+    def get_media_size(self):
+        ewf_handle = pyewf.handle()
+        ewf_handle.open_file_objects(self.file_object_paths)
+        img = ewf_Img_Info(ewf_handle)
+        disk_size_bytes = img.get_size()
+        return disk_size_bytes
 
 class ewf_Img_Info(pytsk3.Img_Info):
     def __init__(self, ewf_handle):

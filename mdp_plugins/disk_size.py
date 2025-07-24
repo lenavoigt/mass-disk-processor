@@ -9,13 +9,7 @@ class DiskSize(object):
     include_in_data_table = True
 
     def get_disk_size(self, disk_image):
-        disk_size = None
-        total_sectors = self.get_total_sectors(disk_image)
-
-        sector_size = 512   # TODO: This shouldn't be hard coded
-
-        if total_sectors is not None:
-            disk_size = sector_size * total_sectors
+        disk_size = disk_image.get_media_size()
 
         return disk_size
 

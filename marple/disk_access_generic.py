@@ -125,7 +125,9 @@ class GenericDiskAccessor(object):
                     handles[each_partition.start] = fs_handle
         return handles
 
-
+    """NEEDS IMPLEMENTING IN SUBCLASS"""
+    def get_media_size(self):
+        raise NotImplementedError('Needs implementing in subclass')
 
     def get_block_size_of_volume_tsk(self, partition_start_sector, sector_size=512):
         fs_handle = self._try_getting_file_system_handle(offset=partition_start_sector*sector_size)
