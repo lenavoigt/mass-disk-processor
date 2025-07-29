@@ -38,6 +38,7 @@ class GenericDiskAccessor(object):
                 a_file.timestamps['m_time'] = each_file.info.meta.mtime
                 a_file.timestamps['a_time'] = each_file.info.meta.atime
                 a_file.status = each_file.info.meta.type
+                a_file.flags = each_file.info.meta.flags
                 self.list_of_files.append(a_file)
 
                 #logging.debug('Added {}'.format(full_path))
