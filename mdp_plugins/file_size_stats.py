@@ -9,14 +9,17 @@ class FileSizeStats(object):
     include_in_data_table = True
 
     def process_disk(self, target_disk_image: TargetDiskImage):
-
         disk_image = target_disk_image.accessor
         files = disk_image.files
         size_array = []
         total = 0
-        for each in files:
-            size_array.append(each.file_size)
-            total += each.file_size
+
+        for each_file in files:
+            if each_file.file_size is not None:
+                size_array.append(each_file.file_size)
+                total += each_file.file_size
+            else:
+                continue
 
         try:
             ds = mdp_plugins.disk_size.DiskSize()
@@ -26,14 +29,21 @@ class FileSizeStats(object):
             disk_size = None
 
         if disk_size is None:
-            disk_usage = None
+            disk_usage_by_files = None
         else:
-            disk_usage = round(100 * total / disk_size, 2)
+            disk_usage_by_files = round(100 * total / disk_size, 2)
+
+        if size_array:
+            mean_size = round(statistics.mean(size_array), 2)
+            median_size = statistics.median(size_array)
+        else:
+            mean_size = None
+            median_size = None
 
         res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
         res.results = {'file_size_total': total,
-                       'file_size_mean': round(statistics.mean(size_array),2),
-                       'file_size_median': statistics.median(size_array),
-                       'disk_usage_percent': disk_usage,
+                       'file_size_mean': mean_size,
+                       'file_size_median': median_size,
+                       'disk_usage_by_files': disk_usage_by_files
                        }
         return res
