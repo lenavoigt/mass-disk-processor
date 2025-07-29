@@ -17,8 +17,12 @@ class DiskSize(object):
     @staticmethod
     def get_total_sectors(disk_image):
         # This is derived from tsk partition information at the moment
-        parts = disk_image._get_partitions()
-        if not parts:
+        try:
+            parts = disk_image._get_partitions()
+            if not parts:
+                return None
+        except Exception as e:
+            print(e)
             return None
         max_sector = max((part.start + part.len for part in parts), default=None)
         return max_sector
