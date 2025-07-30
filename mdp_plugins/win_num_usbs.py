@@ -63,13 +63,14 @@ class WinUSBCount(object):
         #     HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\usbhub
         # Additional:
         #     HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
-        #     HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist.
-        reg_usb_count = reg_usbstor_count = reg_portable_dev = reg_dev_classes = reg_usbccgp = reg_usbhub = reg_mounted_dev = reg_user_assist = None
+        #     HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist
+
+        reg_usb_count = reg_usbstor_count = reg_portable_dev = reg_dev_classes = reg_usbccgp = reg_usbhub = reg_mounted_dev = None
+        reg_user_assist_counts = []
 
         temp_filename = 'export.bin'
 
         for each_file in files:
-
             # Check for usb-related registry keys in software hive
             if re.search('Windows/System32/config/SOFTWARE$', each_file.full_path, re.IGNORECASE) is not None:
 
@@ -79,32 +80,24 @@ class WinUSBCount(object):
 
                 reg = Registry.Registry(temp_filename)
 
-                relevant_registry_keys = [r"Microsoft\Windows Portable Devices\Devices", r"Microsoft\Windows\CurrentVersion\Explorer\UserAssist"]
+                key = r"Microsoft\Windows Portable Devices\Devices"
+                try:
+                    reg_key = reg.open(key)
+                    reg_portable_dev = 0
+                    for dev in reg_key.subkeys():
+                        dev_name = dev.name().lower()
+                        print(f"\tFound dev: {dev_name}")
+                        reg_portable_dev += 1
+                    print("in registry: Windows Portable Devices")
 
-
-                for key in relevant_registry_keys:
-                    try:
-                        reg_key = reg.open(key)
-                        value_count = 0
-                        for dev in reg_key.subkeys():
-                            dev_name = dev.name().lower()
-                            print(f"\tFound dev: {dev_name}")
-                            value_count += 1
-                        if key == r"Microsoft\Windows Portable Devices\Devices":
-                            reg_portable_dev = value_count
-                            print("in registry: Windows Portable Devices")
-                        elif key == r"Microsoft\Windows\CurrentVersion\Explorer\UserAssist":
-                            reg_user_assist = value_count
-                            print("in registry: UserAssist")
-
-                    except Registry.RegistryKeyNotFoundException:
-                        # print(f"Registry key not found: {key}")
-                        continue
+                except Registry.RegistryKeyNotFoundException:
+                    # print(f"Registry key not found: {key}")
+                    continue
 
                 os.remove(temp_filename)
 
             # Check for usb-related registry keys in system hive
-            if re.search('Windows/System32/config/system$', each_file.full_path, re.IGNORECASE) is not None:
+            elif re.search('Windows/System32/config/SYSTEM$', each_file.full_path, re.IGNORECASE) is not None:
 
                 f = open(temp_filename, 'wb')
                 f.write(each_file.read())
@@ -152,7 +145,25 @@ class WinUSBCount(object):
 
                 os.remove(temp_filename)
 
-        return reg_usb_count, reg_usbstor_count, reg_portable_dev, reg_dev_classes, reg_usbccgp, reg_usbhub, reg_mounted_dev, reg_user_assist
+            # check ntuser.dat for all users
+            elif re.search(r'Users/.+/NTUSER\.DAT$', each_file.full_path, re.IGNORECASE):
+                f = open(temp_filename, 'wb')
+                f.write(each_file.read())
+                f.close()
+                reg = Registry.Registry(temp_filename)
+                key_path = r"Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist"
+                try:
+                    reg_key = reg.open(key_path)
+                    value_count = len(reg_key.subkeys())
+                    print(f"UserAssist count for {each_file.full_path}: {value_count}")
+                    reg_user_assist_counts.append(value_count)
+                except Registry.RegistryKeyNotFoundException:
+                    print(f"UserAssist not found in {each_file.full_path}")
+                    reg_user_assist_counts.append(0)
+
+                os.remove(temp_filename)
+
+        return reg_usb_count, reg_usbstor_count, reg_portable_dev, reg_dev_classes, reg_usbccgp, reg_usbhub, reg_mounted_dev, reg_user_assist_counts
 
     def process_disk(self, target_disk_image: TargetDiskImage):
 
@@ -161,7 +172,7 @@ class WinUSBCount(object):
 
         setup_api_usb_count = self.get_setup_api_usb(files)
 
-        reg_usb_count, reg_usbstor_count, reg_portable_dev, reg_dev_classes, reg_usbccgp, reg_usbhub, reg_mounted_dev, reg_user_assist = self.get_reg_usb(files)
+        reg_usb_count, reg_usbstor_count, reg_portable_dev, reg_dev_classes, reg_usbccgp, reg_usbhub, reg_mounted_dev, reg_user_assist_counts = self.get_reg_usb(files)
 
         res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
         res.results = {'num_usb_mass_storage_attached_setupapi': setup_api_usb_count,
@@ -172,7 +183,8 @@ class WinUSBCount(object):
                        'num_usb_reg_usbccgp': reg_usbccgp,
                        'num_usb_reg_usbhub': reg_usbhub,
                        'num_usb_reg_mounted_dev': reg_mounted_dev,
-                       'num_usb_reg_user_assist': reg_user_assist
+                       'num_usb_reg_user_assist_total': sum(reg_user_assist_counts) if reg_user_assist_counts else None,
+                       'num_usb_reg_user_assist_max': max(reg_user_assist_counts) if reg_user_assist_counts else None
                        }
 
         return res
