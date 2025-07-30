@@ -75,7 +75,7 @@ def main():
 
                       mdp_plugins.win_num_user_lnk_files.WinNumberOfUserLNKFiles(),
                       mdp_plugins.win_num_prefetch_files.WinNumberOfPrefetchFiles(),
-                      mdp_plugins.win_num_usbs.USBCountWinSetupApi(),
+                      mdp_plugins.win_num_usbs.WinUSBCount(),
 
                       mdp_plugins.win_browsers.WinBrowsers(),
                       mdp_plugins.firefox_history.FirefoxHistory(),
