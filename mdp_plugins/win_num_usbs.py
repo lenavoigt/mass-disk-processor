@@ -86,9 +86,9 @@ class WinUSBCount(object):
                     reg_portable_dev = 0
                     for dev in reg_key.subkeys():
                         dev_name = dev.name().lower()
-                        print(f"\tFound dev: {dev_name}")
+                        # print(f"\tFound dev: {dev_name}")
                         reg_portable_dev += 1
-                    print("in registry: Windows Portable Devices")
+                    # print("in registry: Windows Portable Devices")
 
                 except Registry.RegistryKeyNotFoundException:
                     # print(f"Registry key not found: {key}")
@@ -118,26 +118,26 @@ class WinUSBCount(object):
                         value_count = 0
                         for dev in reg_key.subkeys():
                             dev_name = dev.name().lower()
-                            print(f"\tFound dev: {dev_name}")
+                            # print(f"\tFound dev: {dev_name}")
                             value_count += 1
                         if key == r"ControlSet001\Enum\USB":
                             reg_usb_count = value_count
-                            print("in registry: USB")
+                            # print("in registry: USB")
                         elif key == r"ControlSet001\Enum\USBSTOR":
                             reg_usbstor_count = value_count
-                            print("in registry: USBSTOR")
+                            # print("in registry: USBSTOR")
                         elif key ==  r"ControlSet001\Control\DeviceClasses":
                             reg_dev_classes = value_count
-                            print("in registry: DeviceClasses")
+                            # print("in registry: DeviceClasses")
                         elif key == r"ControlSet001\Services\usbccgp":
                             reg_usbccgp = value_count
-                            print("in registry: USBCCGP")
+                            # print("in registry: USBCCGP")
                         elif key == r"ControlSet001\Services\usbhub":
                             reg_usbhub = value_count
-                            print("in registry: USBHUB")
+                            # print("in registry: USBHUB")
                         elif key == r"MountedDevices":
                             reg_mounted_dev = value_count
-                            print("in registry: MountedDevices")
+                            # print("in registry: MountedDevices")
 
                     except Registry.RegistryKeyNotFoundException:
                         # print(f"Registry key not found: {key}")
@@ -155,10 +155,10 @@ class WinUSBCount(object):
                 try:
                     reg_key = reg.open(key_path)
                     value_count = len(reg_key.subkeys())
-                    print(f"UserAssist count for {each_file.full_path}: {value_count}")
+                    # print(f"UserAssist count for {each_file.full_path}: {value_count}")
                     reg_user_assist_counts.append(value_count)
                 except Registry.RegistryKeyNotFoundException:
-                    print(f"UserAssist not found in {each_file.full_path}")
+                    # print(f"UserAssist not found in {each_file.full_path}")
                     reg_user_assist_counts.append(0)
 
                 os.remove(temp_filename)

@@ -38,9 +38,9 @@ class WinWifiCount(object):
                     wifi_profile_count = 0
                     for profile in reg_key.subkeys():
                         profile_name = profile.name().lower()
-                        print(f"\tFound wifi profile: {profile_name}")
+                        # print(f"\tFound wifi profile: {profile_name}")
                         wifi_profile_count += 1
-                    print("in registry: NetworkList\Profiles")
+                    # print("in registry: NetworkList\Profiles")
 
                 except Registry.RegistryKeyNotFoundException:
                     # print(f"Registry key not found: {key}")

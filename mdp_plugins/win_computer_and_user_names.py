@@ -35,7 +35,8 @@ class WinComputerAndUserName(object):
                         user_names.append(user_key.name())
                     break
                 except Registry.RegistryKeyNotFoundException:
-                    print("Could not find Users Names key in SAM")
+                    # print("Could not find Users Names key in SAM")
+                    continue
 
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
@@ -61,7 +62,7 @@ class WinComputerAndUserName(object):
                     computer_name = computer_name_val.value()
                     break
                 except Registry.RegistryKeyNotFoundException:
-                    print('key not found')
+                    # print('key not found')
                     computer_name = 'N/A'
                     break
         if os.path.exists(temp_filename):
