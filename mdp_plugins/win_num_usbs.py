@@ -2,16 +2,17 @@ import logging
 import os
 import re
 
+from Registry import Registry
+
 import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
 
 
-class USBCountWinSetupApi(object):
+class WinUSBCount(object):
 
     name = 'win_no_usbs'
-    description = 'Scrapes Setupapi for attached USB mass storage devices'
+    description = 'Scrapes Setupapi for attached USB mass storage devices, checks Windows registry for USB'
     include_in_data_table = True
-
 
     @staticmethod
     def get_setup_api_usb(files):
@@ -47,6 +48,112 @@ class USBCountWinSetupApi(object):
                     os.remove(temp_filename)
         return usb_count
 
+    @staticmethod
+    def get_reg_usb(files):
+        # source: https://www.magnetforensics.com/blog/artifact-profile-usb-devices/
+        # Windows XP:
+        #     HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB\
+        #     HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USBSTOR\
+        # Windows 7+:
+        #     HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Portable Devices\Devices
+        # Windows 8/8.1+:
+        #     HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceClasses
+        # Windows 10 and Windows 11:
+        #     HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\usbccgp
+        #     HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\usbhub
+        # Additional:
+        #     HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
+        #     HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist.
+        reg_usb_count = reg_usbstor_count = reg_portable_dev = reg_dev_classes = reg_usbccgp = reg_usbhub = reg_mounted_dev = reg_user_assist = None
+
+        temp_filename = 'export.bin'
+
+        for each_file in files:
+
+            # Check for usb-related registry keys in software hive
+            if re.search('Windows/System32/config/SOFTWARE$', each_file.full_path, re.IGNORECASE) is not None:
+
+                f = open(temp_filename, 'wb')
+                f.write(each_file.read())
+                f.close()
+
+                reg = Registry.Registry(temp_filename)
+
+                relevant_registry_keys = [r"Microsoft\Windows Portable Devices\Devices", r"Microsoft\Windows\CurrentVersion\Explorer\UserAssist"]
+
+
+                for key in relevant_registry_keys:
+                    try:
+                        reg_key = reg.open(key)
+                        value_count = 0
+                        for dev in reg_key.subkeys():
+                            dev_name = dev.name().lower()
+                            print(f"\tFound dev: {dev_name}")
+                            value_count += 1
+                        if key == r"Microsoft\Windows Portable Devices\Devices":
+                            reg_portable_dev = value_count
+                            print("in registry: Windows Portable Devices")
+                        elif key == r"Microsoft\Windows\CurrentVersion\Explorer\UserAssist":
+                            reg_user_assist = value_count
+                            print("in registry: UserAssist")
+
+                    except Registry.RegistryKeyNotFoundException:
+                        # print(f"Registry key not found: {key}")
+                        continue
+
+                os.remove(temp_filename)
+
+            # Check for usb-related registry keys in system hive
+            if re.search('Windows/System32/config/system$', each_file.full_path, re.IGNORECASE) is not None:
+
+                f = open(temp_filename, 'wb')
+                f.write(each_file.read())
+                f.close()
+
+                reg = Registry.Registry(temp_filename)
+
+                relevant_registry_keys = [r"ControlSet001\Enum\USB",
+                                          r"ControlSet001\Enum\USBSTOR",
+                                          r"ControlSet001\Control\DeviceClasses",
+                                          r"ControlSet001\Services\usbccgp",
+                                          r"ControlSet001\Services\usbhub",
+                                          r"MountedDevices"]
+
+                for key in relevant_registry_keys:
+                    try:
+                        reg_key = reg.open(key)
+                        value_count = 0
+                        for dev in reg_key.subkeys():
+                            dev_name = dev.name().lower()
+                            print(f"\tFound dev: {dev_name}")
+                            value_count += 1
+                        if key == r"ControlSet001\Enum\USB":
+                            reg_usb_count = value_count
+                            print("in registry: USB")
+                        elif key == r"ControlSet001\Enum\USBSTOR":
+                            reg_usbstor_count = value_count
+                            print("in registry: USBSTOR")
+                        elif key ==  r"ControlSet001\Control\DeviceClasses":
+                            reg_dev_classes = value_count
+                            print("in registry: DeviceClasses")
+                        elif key == r"ControlSet001\Services\usbccgp":
+                            reg_usbccgp = value_count
+                            print("in registry: USBCCGP")
+                        elif key == r"ControlSet001\Services\usbhub":
+                            reg_usbhub = value_count
+                            print("in registry: USBHUB")
+                        elif key == r"MountedDevices":
+                            reg_mounted_dev = value_count
+                            print("in registry: MountedDevices")
+
+                    except Registry.RegistryKeyNotFoundException:
+                        # print(f"Registry key not found: {key}")
+                        continue
+
+                os.remove(temp_filename)
+
+        return reg_usb_count, reg_usbstor_count, reg_portable_dev, reg_dev_classes, reg_usbccgp, reg_usbhub, reg_mounted_dev, reg_user_assist
+
     def process_disk(self, target_disk_image: TargetDiskImage):
 
         disk_image = target_disk_image.accessor
@@ -54,16 +161,25 @@ class USBCountWinSetupApi(object):
 
         setup_api_usb_count = self.get_setup_api_usb(files)
 
-        # TODO add Registry based metrics
+        reg_usb_count, reg_usbstor_count, reg_portable_dev, reg_dev_classes, reg_usbccgp, reg_usbhub, reg_mounted_dev, reg_user_assist = self.get_reg_usb(files)
 
         res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'num_usb_mass_storage_attached_setupapi': setup_api_usb_count}
+        res.results = {'num_usb_mass_storage_attached_setupapi': setup_api_usb_count,
+                       'num_usb_reg_USB': reg_usb_count,
+                       'num_usb_reg_USBSTOR': reg_usbstor_count,
+                       'num_usb_reg_portable_dev': reg_portable_dev,
+                       'num_usb_reg_dev_classes': reg_dev_classes,
+                       'num_usb_reg_usbccgp': reg_usbccgp,
+                       'num_usb_reg_usbhub': reg_usbhub,
+                       'num_usb_reg_mounted_dev': reg_mounted_dev,
+                       'num_usb_reg_user_assist': reg_user_assist
+                       }
 
         return res
 
 # just a way to test a plugin quickly
 if __name__ == '__main__':
-    a = USBCountWinSetupApi()
+    a = WinUSBCount()
 
     test_image_path = 'path to disk image'
     disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)

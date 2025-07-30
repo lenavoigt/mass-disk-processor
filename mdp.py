@@ -82,6 +82,7 @@ def main():
                       mdp_plugins.edge_history.EdgeHistory(),
 
                       mdp_plugins.file_size_stats.FileSizeStats(),
+                      mdp_plugins.win_num_usbs.WinUSBCount(),
                       # mdp_plugins.plaso.Plaso(),
                       # mdp_plugins.external_program_demo.ExternalProgramDemo(),
                       ]
