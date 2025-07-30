@@ -34,7 +34,7 @@ import mdp_plugins.firefox_history
 import mdp_plugins.chrome_history
 import mdp_plugins.edge_history
 import mdp_plugins.file_size_stats
-import mdp_plugins.win_computer_name
+import mdp_plugins.win_computer_and_user_names
 import mdp_plugins.win_num_wifi_connections
 
 from mdp_lib.config import populate_file_signatures, populate_file_hashes_and_signatures
@@ -84,7 +84,7 @@ def main():
 
                       mdp_plugins.file_size_stats.FileSizeStats(),
                       mdp_plugins.win_num_usbs.WinUSBCount(),
-                      mdp_plugins.win_computer_name.WinComputerAndUserName(),
+                      mdp_plugins.win_computer_and_user_names.WinComputerAndUserName(),
                       mdp_plugins.win_num_wifi_connections.WinWifiCount(),
                       # mdp_plugins.plaso.Plaso(),
                       # mdp_plugins.external_program_demo.ExternalProgramDemo(),
