@@ -51,7 +51,6 @@ def main():
     parser.add_argument("basepath")
     args = parser.parse_args()
     path_to_disk_images = args.basepath
-    #path_to_disk_images = '/home/lena/PycharmProjects/mdp/TestDisks' # 2
 
     # add methods from plugins to call here
     plugin_classes = [
