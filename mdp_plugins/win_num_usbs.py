@@ -12,15 +12,13 @@ class USBCountWinSetupApi(object):
     description = 'Scrapes Setupapi for attached USB mass storage devices'
     include_in_data_table = True
 
-    def process_disk(self, target_disk_image: TargetDiskImage):
 
-        disk_image = target_disk_image.accessor
-        files = disk_image.files
-
+    @staticmethod
+    def get_setup_api_usb(files):
         temp_filename = 'export.bin'
         usb_count = None
         for each_file in files:
-            if re.search('setupapi.dev.log$', each_file.full_path, re.IGNORECASE) is not None:
+            if re.search(r'setupapi(\.dev)?\.log$', each_file.full_path, re.IGNORECASE) is not None:
                 # print('reg found')
                 # print(each_file.full_path)
 
@@ -32,18 +30,34 @@ class USBCountWinSetupApi(object):
                 usb_count = 0
                 for each_line in f:
                     try:
-                        if re.search("Device Install \(Hardware initiated\) - USB\\\\VID_(.{4})&PID_(.{4})\\\\(.+)", each_line.decode('utf-8')) is not None:
-                            usb_count +=1
-                        elif re.search("Device Install \(Hardware initiated\) - SWD\\\\WPDBUSENUM\\\\_\?\?_USBSTOR#", each_line.decode('utf-8')) is not None:
-                            usb_count +=1
+                        # XP
+                        if re.search(r'#I123.*?USBSTOR\\DISK&VEN_.*?"', each_line.decode('utf-8')) is not None:
+                            usb_count += 1
+                        # Windows Vista and newer
+                        if re.search("Device Install \(Hardware initiated\) - USB\\\\VID_(.{4})&PID_(.{4})\\\\(.+)",
+                                     each_line.decode('utf-8')) is not None:
+                            usb_count += 1
+                        elif re.search("Device Install \(Hardware initiated\) - SWD\\\\WPDBUSENUM\\\\_\?\?_USBSTOR#",
+                                       each_line.decode('utf-8')) is not None:
+                            usb_count += 1
                     except UnicodeDecodeError as e:
                         logging.error(e)
 
                 if os.path.exists(temp_filename):
                     os.remove(temp_filename)
+        return usb_count
+
+    def process_disk(self, target_disk_image: TargetDiskImage):
+
+        disk_image = target_disk_image.accessor
+        files = disk_image.files
+
+        setup_api_usb_count = self.get_setup_api_usb(files)
+
+        # TODO add Registry based metrics
 
         res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'num_usb_mass_storage_attached_setupapi': usb_count}
+        res.results = {'num_usb_mass_storage_attached_setupapi': setup_api_usb_count}
 
         return res
 
