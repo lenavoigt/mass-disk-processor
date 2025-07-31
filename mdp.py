@@ -16,6 +16,7 @@ import mdp_plugins.disk_image_lifespan
 import mdp_plugins.disk_size
 import mdp_plugins.no_files
 import mdp_plugins.no_partitions
+import mdp_plugins.no_partition_types
 import mdp_plugins.num_user_files
 import mdp_plugins.win_num_user_lnk_files
 import mdp_plugins.operating_system_detect
@@ -88,6 +89,7 @@ def main():
                       mdp_plugins.win_num_wifi_connections.WinWifiCount(),
                       # mdp_plugins.plaso.Plaso(),
                       # mdp_plugins.external_program_demo.ExternalProgramDemo(),
+                      mdp_plugins.no_partition_types.NumberOfPartitionTypes(),
                       ]
 
     logging.basicConfig(filename='log.txt', encoding='utf-8')
