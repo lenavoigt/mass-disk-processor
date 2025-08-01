@@ -13,119 +13,84 @@ class Plaso(object):
     description = 'Run plaso against disk'
     include_in_data_table = True
 
+    # Note: this plugin increases processing time drastically for the first run,
+    #   plugin result fields are generated dynamically based on event_types detected by plaso, no predetermined results-list
     def process_disk(self, target_disk_image: TargetDiskImage):
 
         evidence_path, image_name = os.path.split(target_disk_image.image_path)
         case_path = os.path.dirname(evidence_path)
-        plaso_file_path = os.path.join(case_path, image_name + '.plaso')
-        path_to_plaso_csv = os.path.join(case_path, image_name + '.csv')
 
-        print(plaso_file_path)
+        # add image file name as prefix to all output files
+        prefix = os.path.join(case_path, image_name)
+        plaso_file_path = f"{prefix}.plaso"
+        log2timeline_log = f"{prefix}.log2timeline.log.gz"
+        psort_log = f"{prefix}.psort.log.gz"
+        pinfo_log = f"{prefix}.pinfo.log.gz"
 
-        # if os.path.exists(path_to_plaso_csv):
-        #     print('CSV already exists')
-        #
-        #     # skip generation but do stats later
-        #
-        # else:
-        #    print('does not exist')
+        path_to_plaso_csv = f"{prefix}.plaso.csv"
+        pinfo_txt = f"{prefix}.pinfo.txt"
 
-        path_to_venv_python = mdp_lib.config.path_to_venv_python
-        path_to_plaso_scripts = mdp_lib.config.path_to_plaso_scripts
+        # print(plaso_file_path)
 
-        # this method of calling programs is bad
-        # but is a solution since we want the venv set up for plaso
-        # https://stackoverflow.com/questions/8052926/running-subprocess-within-different-virtualenv-with-python
+        # Check if files relevant for our metrics already exist
+        csv_exists = os.path.exists(path_to_plaso_csv)
+        pinfo_exists = os.path.exists(pinfo_txt)
 
-        devnull = open(os.devnull, 'w')
+        if csv_exists and pinfo_exists:
+            print(f"Skipping Plaso run - using existing {path_to_plaso_csv} and {pinfo_txt}")
+            with open(pinfo_txt, 'r') as f:
+                pinfo_output = f.read()
+        else:
+            path_to_venv_python = mdp_lib.config.path_to_venv_python
+            path_to_plaso_scripts = mdp_lib.config.path_to_plaso_scripts
 
-        # Run log2timeline
-        cmd = 'source "{}"; python3 "{}/log2timeline.py" --logfile "{}" --partitions all --vss_stores=none --storage-file "{}" "{}"'.format(path_to_venv_python,
-                                                                                   path_to_plaso_scripts,
-                                                                                   case_path + '/log2timeline.log.gz',
-                                                                                   plaso_file_path,
-                                                                                                                                            target_disk_image.image_path)
+            # this method of calling programs is bad
+            # but is a solution since we want the venv set up for plaso
+            # https://stackoverflow.com/questions/8052926/running-subprocess-within-different-virtualenv-with-python
 
-        print("plaso cmd:")
-        print(cmd)
-        subprocess.call(cmd, shell=True, executable='/bin/bash', stdout=devnull)
+            devnull = open(os.devnull, 'w')
+
+            # Run log2timeline
+            cmd = f'source "{path_to_venv_python}"; python3 "{path_to_plaso_scripts}/log2timeline.py" ' \
+                  f'--logfile "{log2timeline_log}" --partitions all --vss_stores=none ' \
+                  f'--storage-file "{plaso_file_path}" "{target_disk_image.image_path}"'
+            print("plaso cmd:")
+            print(cmd)
+            subprocess.call(cmd, shell=True, executable='/bin/bash', stdout=devnull)
+
+            if os.path.exists(path_to_plaso_csv):
+                os.remove(path_to_plaso_csv)
+
+            # Convert to CSV
+            cmd = f'source "{path_to_venv_python}"; python3 "{path_to_plaso_scripts}/psort.py" ' \
+                  f'--logfile "{psort_log}" -o dynamic -w "{path_to_plaso_csv}" "{plaso_file_path}"'
+            subprocess.call(cmd, shell=True, executable='/bin/bash', stdout=devnull)
+
+            # get info from .plaso to pinfo
+            cmd = f'source "{path_to_venv_python}"; python3 "{path_to_plaso_scripts}/pinfo.py" ' \
+                  f'--logfile "{pinfo_log}" "{plaso_file_path}"'
+            output = subprocess.check_output(cmd, shell=True, executable='/bin/bash')
+
+            pinfo_output = output.decode()
+
+            # Save pinfo output to text
+            with open(pinfo_txt, 'w') as f:
+                f.write(pinfo_output)
 
 
-        if os.path.exists(path_to_plaso_csv):
-            os.remove(path_to_plaso_csv)
-
-        # Convert to CSV
-        cmd = 'source "{}"; python3 "{}/psort.py" --logfile "{}" -o dynamic -w "{}" "{}"'.format(path_to_venv_python,
-                                                                                   path_to_plaso_scripts,
-                                                                                   case_path + '/psort.log.gz',
-                                                                                   path_to_plaso_csv,
-                                                                                   plaso_file_path)
-
-        subprocess.call(cmd, shell=True, executable='/bin/bash', stdout=devnull)
-
-        # get info from .plaso
-        cmd = 'source "{}"; python3 "{}/pinfo.py" --logfile "{}" "{}"'.format(path_to_venv_python,
-                                                               path_to_plaso_scripts,
-                                                               case_path + '/pinfo.log.gz',
-                                                               plaso_file_path)
-
-        output = subprocess.check_output(cmd, shell=True, executable='/bin/bash')
-
-        f = open(os.path.join(case_path, 'pinfo.txt'), 'w')
-        f.write(output.decode())
-        f.close()
-
-        # TODO this is not a full list
-        event_types = ['amcache',
-                       'appcompatcache',
-                       'bagmru',
-                       'bam',
-                       'chrome_cache',
-                       'explorer_mountpoints2',
-                       'explorer_programscache',
-                       'filestat',
-                       'lnk',
-                       'mrulist_string',
-                       'mrulistex_string',
-                       'mrulistex_string_and_shell_item',
-                       'msie_zone',
-                       'networks',
-                       'olecf_automatic_destinations',
-                       'olecf_default',
-                       'olecf_document_summary',
-                       'olecf_summary',
-                       'pe',
-                       'prefetch',
-                       'recycle_bin',
-                       'setupapi',
-                       'shell_items',
-                       'userassist',
-                       'usnjrnl',
-                       'windows_boot_execute',
-                       'windows_run',
-                       'windows_sam_users',
-                       'windows_services',
-                       'windows_shutdown',
-                       'windows_task_cache',
-                       'windows_timezone',
-                       'windows_typed_urls',
-                       'windows_usb_devices',
-                       'windows_usbstor_devices',
-                       'windows_version',
-                       'winevtx',
-                       'winlogon',
-                       'winreg_default'
-                       ]
-
+        # Extract all lines from pinfo that are like: "event_type_name : 123"
+        # create list of event_types dynamically
         count_dict = {}
-        for each_type in event_types:
-            res = re.search(r'{}\s:\s(\d+)'.format(each_type), output.decode())
-            if res is not None:
-                count_dict[each_type] = res.group(1)
+        for line in pinfo_output.splitlines():
+            match = re.match(r'^\s*([a-z0-9_]+)\s*:\s*(\d+)', line)
+            if match:
+                event_type = match.group(1)
+                count = int(match.group(2))
+                count_dict[event_type] = count
 
         count = 0
         f = open(path_to_plaso_csv)
-        for each in f:
+        for _ in f:
             count += 1
 
         res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
@@ -145,8 +110,6 @@ if __name__ == '__main__':
     disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
     res = a.process_disk(disk_image_object)
     print(res)
-
-
 
 
 # full list of plaso plugins (2024-03-27)
