@@ -21,7 +21,8 @@ class Plaso(object):
         case_path = os.path.dirname(evidence_path)
 
         # add image file name as prefix to all output files
-        prefix = os.path.join(case_path, image_name)
+        plaso_folder = os.path.join(case_path, "plaso-output")
+        prefix = os.path.join(plaso_folder, image_name)
         plaso_file_path = f"{prefix}.plaso"
         log2timeline_log = f"{prefix}.log2timeline.log.gz"
         psort_log = f"{prefix}.psort.log.gz"
@@ -30,7 +31,11 @@ class Plaso(object):
         path_to_plaso_csv = f"{prefix}.plaso.csv"
         pinfo_txt = f"{prefix}.pinfo.txt"
 
-        # print(plaso_file_path)
+
+        # check if plaso-output folder exists
+        plaso_folder_exists = os.path.exists(plaso_folder)
+        if not plaso_folder_exists:
+            os.makedirs(plaso_folder)
 
         # Check if files relevant for our metrics already exist
         csv_exists = os.path.exists(path_to_plaso_csv)
