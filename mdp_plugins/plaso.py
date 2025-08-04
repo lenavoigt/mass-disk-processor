@@ -2,7 +2,7 @@ import os.path
 import re
 import subprocess
 
-import mdp_lib.config
+import config.config as config
 import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
 
@@ -46,8 +46,8 @@ class Plaso(object):
             with open(pinfo_txt, 'r') as f:
                 pinfo_output = f.read()
         else:
-            path_to_venv_python3 = mdp_lib.config.path_to_venv_python3
-            path_to_plaso_scripts = mdp_lib.config.path_to_plaso_scripts
+            path_to_venv_python3 = config.path_to_venv_python3
+            path_to_plaso_scripts = config.path_to_plaso_scripts
 
             # this method of calling programs is bad
             # but is a solution since we want the venv set up for plaso

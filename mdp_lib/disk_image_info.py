@@ -7,7 +7,7 @@ from typing import List
 
 import marple.disk_access
 from marple.file_object import FileItem
-from mdp_lib.config import use_db_for_file_lists, max_file_size_for_sha1_calculation
+from config.config import use_db_for_file_lists, max_file_size_for_sha1_calculation
 
 
 class TargetDiskImage(object):

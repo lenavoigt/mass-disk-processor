@@ -6,7 +6,7 @@ from typing import List
 from marple.file_object import FileItem
 
 import mdp_lib.plugin_result
-from mdp_lib.config import path_to_nsrl
+from config.config import path_to_nsrl
 from mdp_lib.disk_image_info import TargetDiskImage
 
 

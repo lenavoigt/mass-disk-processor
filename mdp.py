@@ -3,94 +3,49 @@ import os.path
 import csv
 import json
 import logging
+import sys
 import time
+from pathlib import Path
 
 import mdp_lib.disk_image_info
 import mdp_lib.plugin_result
 import mdp_lib.plugin_order_config
 
-# Add plugin imports here
+from plugin_registry import load_enabled_plugins
 
-import mdp_plugins.external_program_demo
-import mdp_plugins.disk_image_lifespan
-import mdp_plugins.disk_size
-import mdp_plugins.no_files
-import mdp_plugins.no_partitions
-import mdp_plugins.no_partition_types
-import mdp_plugins.num_user_files
-import mdp_plugins.win_num_user_lnk_files
-import mdp_plugins.operating_system_detect
-import mdp_plugins.plaso
-import mdp_plugins.win_lifespan
-import mdp_plugins.win_num_usbs
-import mdp_plugins.win_user_info
-import mdp_plugins.win_num_prefetch_files
-import mdp_plugins.win_screen_resolution
-import mdp_plugins.win_version
-import mdp_plugins.win_evt_logins
-import mdp_plugins.win_browsers
-import mdp_plugins.win_apps
-import mdp_plugins.file_types
-import mdp_plugins.firefox_history
-import mdp_plugins.chrome_history
-import mdp_plugins.edge_history
-import mdp_plugins.file_size_stats
-import mdp_plugins.win_computer_and_user_names
-import mdp_plugins.win_num_wifi_connections
+from config.config import populate_file_signatures, populate_file_hashes_and_signatures
+from config.plugin_config import enabled_plugins
 
-from mdp_lib.config import populate_file_signatures, populate_file_hashes_and_signatures
+
+def parse_args():
+
+    # --basepath (path to folder containing a lot of evidence/data to process)
+    # TODO maybe add alternatives
+    # --path (path to disk to process)
+    # --output (path for output
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("basepath", type=Path, help="Absolute path to the directory containing all case folders. Each "
+                                                    "case must have a 'data' subfolder containing the digital "
+                                                    "evidence (i.e. the .dd or .E01, .E02, ... files.")
+    args = parser.parse_args()
+    if not args.basepath.exists() or not args.basepath.is_dir():
+        print("Basepath provided doesn't exist or is not a directory.")
+        sys.exit(1)
+
+    return args
+
 
 def main():
 
     start_time = time.time()
-    disk_images_processed = 0
-
-    # --path (path to disk to process) #TODO
-    # --basepath (path to folder containing a lot of evidence/data to process)
-    # --ouptut (path for output) # todo
 
     # Command line parameter handling
-    parser = argparse.ArgumentParser()
-    parser.add_argument("basepath")
-    args = parser.parse_args()
+    args = parse_args()
+
     path_to_disk_images = args.basepath
 
-    # add methods from plugins to call here
-    plugin_classes = [
-                      mdp_plugins.disk_size.DiskSize(),
-                      mdp_plugins.no_partitions.NumberOfPartitions(),
-                      mdp_plugins.disk_image_lifespan.Lifespan(),
-                      mdp_plugins.no_files.NumberOfFiles(),
-                      mdp_plugins.num_user_files.NumberOfUserFiles(),
-                      mdp_plugins.file_types.FileTypes(),
-                      mdp_plugins.operating_system_detect.EstimateOS(),
-
-                      mdp_plugins.win_lifespan.WinOSLifespan(),
-                      mdp_plugins.win_version.WinVersion(),
-                      mdp_plugins.win_user_info.UserInfo(),
-
-                      mdp_plugins.win_evt_logins.EVTXLogs(),
-
-                      mdp_plugins.win_screen_resolution.WinScreenResolution(),
-                      mdp_plugins.win_apps.WinApps(),
-
-                      mdp_plugins.win_num_user_lnk_files.WinNumberOfUserLNKFiles(),
-                      mdp_plugins.win_num_prefetch_files.WinNumberOfPrefetchFiles(),
-                      mdp_plugins.win_num_usbs.WinUSBCount(),
-
-                      mdp_plugins.win_browsers.WinBrowsers(),
-                      mdp_plugins.firefox_history.FirefoxHistory(),
-                      mdp_plugins.chrome_history.ChromeHistory(),
-                      mdp_plugins.edge_history.EdgeHistory(),
-
-                      mdp_plugins.file_size_stats.FileSizeStats(),
-                      mdp_plugins.win_num_usbs.WinUSBCount(),
-                      mdp_plugins.win_computer_and_user_names.WinComputerAndUserName(),
-                      mdp_plugins.win_num_wifi_connections.WinWifiCount(),
-                      # mdp_plugins.plaso.Plaso(),
-                      # mdp_plugins.external_program_demo.ExternalProgramDemo(),
-                      mdp_plugins.no_partition_types.NumberOfPartitionTypes(),
-                      ]
+    plugin_classes = load_enabled_plugins(enabled_plugins)
 
     logging.basicConfig(filename='log.txt', encoding='utf-8')
 
@@ -110,8 +65,6 @@ def main():
     print('='*20)
     print('Processing complete for {} disk images in {} minutes.'.format(len(summary_dict), total_time/60))
     print('='*20)
-
-
 
 
 def generate_summary_table_dict(result_list):
@@ -325,13 +278,6 @@ def process_multiple_disk_images(base_path_to_images, plugins):
     return list_of_results
 
 
-
-
-
-
-
-
-
 def __run_plugins(plugin_folder, target_disk_image):
     pass
 
@@ -368,7 +314,6 @@ def __get_disk_images_from_sub_folder(target_folder):
         disk_images.append({'path': os.path.join(data_path, each_disk_image_file), 'target_folder': target_folder})
 
     return disk_images
-
 
 
 if __name__ == '__main__':
