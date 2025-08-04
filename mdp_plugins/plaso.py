@@ -46,7 +46,7 @@ class Plaso(object):
             with open(pinfo_txt, 'r') as f:
                 pinfo_output = f.read()
         else:
-            path_to_venv_python = mdp_lib.config.path_to_venv_python
+            path_to_venv_python3 = mdp_lib.config.path_to_venv_python3
             path_to_plaso_scripts = mdp_lib.config.path_to_plaso_scripts
 
             # this method of calling programs is bad
@@ -56,25 +56,47 @@ class Plaso(object):
             devnull = open(os.devnull, 'w')
 
             # Run log2timeline
-            cmd = f'source "{path_to_venv_python}"; python3 "{path_to_plaso_scripts}/log2timeline.py" ' \
-                  f'--logfile "{log2timeline_log}" --partitions all --vss_stores=none ' \
-                  f'--storage-file "{plaso_file_path}" "{target_disk_image.image_path}"'
-            print("plaso cmd:")
-            print(cmd)
-            subprocess.call(cmd, shell=True, executable='/bin/bash', stdout=devnull)
+            cmd = [
+                path_to_venv_python3,  # needs to point to plaso venvs python3 executable
+                f"{path_to_plaso_scripts}/log2timeline.py",
+                "--logfile", log2timeline_log,
+                "--partitions", "all",
+                "--vss_stores=none",
+                "--storage-file", plaso_file_path,
+                target_disk_image.image_path
+            ]
+
+            print("Plaso cmd:")
+            print(print(' '.join(cmd)))
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
             if os.path.exists(path_to_plaso_csv):
                 os.remove(path_to_plaso_csv)
 
             # Convert to CSV
-            cmd = f'source "{path_to_venv_python}"; python3 "{path_to_plaso_scripts}/psort.py" ' \
-                  f'--logfile "{psort_log}" -o dynamic -w "{path_to_plaso_csv}" "{plaso_file_path}"'
-            subprocess.call(cmd, shell=True, executable='/bin/bash', stdout=devnull)
+            cmd = [
+                path_to_venv_python3,
+                f"{path_to_plaso_scripts}/psort.py",
+                "--logfile", psort_log,
+                "-o", "dynamic",
+                "-w", path_to_plaso_csv,
+                plaso_file_path
+            ]
+
+            print("psort cmd:")
+            print(' '.join(cmd))
+
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
             # get info from .plaso to pinfo
-            cmd = f'source "{path_to_venv_python}"; python3 "{path_to_plaso_scripts}/pinfo.py" ' \
-                  f'--logfile "{pinfo_log}" "{plaso_file_path}"'
-            output = subprocess.check_output(cmd, shell=True, executable='/bin/bash')
+            cmd = [
+                path_to_venv_python3,
+                f"{path_to_plaso_scripts}/pinfo.py",
+                "--logfile", pinfo_log,
+                plaso_file_path
+            ]
+
+            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
             pinfo_output = output.decode()
 

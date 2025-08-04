@@ -104,7 +104,7 @@ $ pip install plaso
 
 Then, you can set the following values in MDP's `config.py`:
 ```
-path_to_venv_python = '<absolute-path-tp-MDP>/plaso-venv/bin/activate'
+path_to_venv_python = '<absolute-path-tp-MDP>/plaso-venv/bin/python3'
 path_to_plaso_scripts = '<absolute-path-tp-MDP>/plaso-venv/lib/python3.10/site-packages/plaso/scripts'
 ```
 *Note: If you're using a different Python version, adjust the path to match the version you're using.*

@@ -1,7 +1,7 @@
 # copy this file to config.py and update details for plaso to work
 # install plaso dependencies as per instructions
 
-path_to_venv_python = '/set/path/to/installed/plaso/venv/activate'
+path_to_venv_python3 = '/set/path/to/installed/plaso/venv/python3'
 path_to_plaso_scripts = '/set/path/to/plaso/scripts/folder'
 
 # Specify path to a minimal RDSv3 (downloaded from: https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl/nsrl-download/current-rds)
