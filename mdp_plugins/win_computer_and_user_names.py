@@ -79,8 +79,8 @@ class WinComputerAndUserName(object):
 
 
         res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'computer_name': str(computer_name),
-                        'user_names': ';'.join(user_names) if user_names else None} #TODO
+        res.results = {'computer_name': computer_name,
+                        'user_names': ';'.join(user_names) if user_names else None}
         return res
 
 
