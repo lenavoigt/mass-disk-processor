@@ -11,7 +11,7 @@ Also, in [our FAUbox drive](https://faubox.rrze.uni-erlangen.de/getlink/fiSyw7S4
 
 # Run MDP
 
-To retrieve metrics from disk image datasets using MDP, use the following command **in your project's virtual environment**:
+To retrieve metrics from disk image datasets using MDP, use the following command **in your project's virtual environment** (after following the steps outlined in [Preparation](#Preparation)):
 
 ```
 $ python mdp.py target_folder_of_disk_images
@@ -32,13 +32,14 @@ Before you can run MDP, you need to:
 0. Set up a virtual environment and install the dependencies from `requirements.txt`.
 1. Put your disk image dataset in the required folder structure.
 2. Create a configuration file `config.py`. *(Optionally)* Modify the configuration.
-3. *(Optionally)* Prepare a Plaso environment.
+3. Select the plugins you'd like to include in your metric collection.
+4. *(Optionally)* Prepare a Plaso environment.
 
 These steps are detailed below.
 
 **Note**: MDP was developed and tested on macOS Sequoia and Ubuntu 22.04 using Python 3.10. The instructions below refer to this environment.
 
-## Virtual Environment Setup and Dependency Installation
+## 0. Virtual Environment Setup and Dependency Installation
 
 We recommend setting up a virtual environment to use MDP and installing the dependencies with the following commands:
 
@@ -49,7 +50,7 @@ $ pip install -r requirements.txt
 ```
 Alternatively, you can use an IDE (e.g. PyCharm), which can handle environment setup and dependency installation.
 
-## Required Folder Structure for the Disk Image Dataset
+## 1. Required Folder Structure for the Disk Image Dataset
 
 The target folder containing the disk images to be processed must follow this structure:
 ```
@@ -71,11 +72,11 @@ Each case folder (folder_of_case-1, folder_of_case-2, etc.) must contain a data 
 - Currently, MDP does not support split dd files. 
 - MDP does support split EWF (.e01, .e02, etc.) files.
 
-## Creation and Modification of `config.py`
+## 2. Creation and Modification of `config.py`
 
 The file `config_example.py` is provided as a template. Before you can run MDP you need to copy it to `config.py`:
 ```
-$ cp mdp_lib/config_example.py mdp_lib/config.py
+$ cp config/config_example.py config/config.py
 ```
 
 Afterwards, the default configuration in `config.py` can be modified if you want to customize processing options. You can modify the following settings:
@@ -86,7 +87,25 @@ Afterwards, the default configuration in `config.py` can be modified if you want
     - Set maximum file size for hashing
 - Parameters required for using Plaso (see below)
 
-## Enabling the Usage of Plaso
+## 3. Selecting Plugins for an MDP Run
+
+To control which plugins are executed during an MDP run, edit the `enabled_plugins` list in `config/plugin_config.py`. 
+
+To exclude a plugin for a run, you can simply comment it out in the list:
+```
+enabled_plugins = [
+    # "disk_size",    # currently disabled plugin
+    "file_types",     # enabled plugin
+    "chrome_history", # enabled plugin
+    ...
+]
+```
+
+Each string in this list should match a key from the `plugin_registry` dictionary in `plugin_registry.py`.
+
+*Note:  Plugins are executed in the order they appear in this list.*
+
+## 4. _(Optional)_ Enabling the Usage of Plaso
 
 > ⚠️ The Plaso plugin relies on commands that will only work on POSIX-based systems.
 
@@ -119,15 +138,29 @@ MDP produces the following results:
 
 # Creating new Plugins
 
-To create a new plugin it is best to copy one of the existing ones.
+To create a new plugin it’s easiest to copy an existing one from the `mdp_plugins/` directory and adapt it to your needs.
 
-To include the plugin in your metric collection runs, in `mdp.py` you need to:
-- import the new plugin 
-- add it to the list named `plugin_classes`, referring to the name of the class within the plugin Python file. 
+To include the plugin in your metric collection runs, you need to:
+1. **Create the new plugin file**: 
+   - Add the new file (e.g., `new_plugin.py`) to `mdp_plugins/`
+   - The plugin has to define a class (e.g., `NewPlugin(object)`) with its properties (`name`, `description`, `include_in_data_table`) and implement the `process_disk()` method
+2. **Register the plugin in the `plugin_registry.py`**:
+   - Import your plugin at the top (grouped by category)
+   - Add it to the `plugin_registry` dictionary, e.g.:
+     ```
+      plugin_registry = {
+         ...
+         "new_plugin": new_plugin.NewPlugin,
+      } 
+      ``` 
+3. **Enable it for an MDP run**:  
+   - In `config/plugin_config.py`, add the name of your plugin (as added to the plugin registry dict) to the `enabled_plugins` list: 
+     ```
+      enabled_plugins = [
+        ...
+        "new_plugin",
+      ]
+      ```
+   - *Note: Plugins not listed in enabled_plugins will not run, even if they are imported and registered in the plugin registry*
 
-> You should make sure that your plugin always returns the same result fields (returning None for each field where no value was retrieved).
-
-# Specifying a Plugin Order for Metric Collection Runs
-
-If you'd like to run MDP plugins in a specific order, you need to specify the plugin order in the `plugin_order_config.py` (using the specified plugin names).
-
+> You should make sure that your plugin always returns the same result fields (returning None for each field where no value was retrieved). This ensures consistent column ordering across all disk image results.
