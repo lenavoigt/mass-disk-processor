@@ -15,9 +15,10 @@ This README is structured to guide you through:
 1. [Run MDP](#1-run-mdp): How to execute the tool on disk image datasets
 2. [Preparation](#2-preparation): Setting up the MDP Python environment, preparing the target disk image folder(s), configuring the project, selecting plugins, and (*optionally*) preparing separate environments for external tools (e.g., Plaso) executed by MDP plugins.
 3. [Results](#3-results): Outputs produced by MDP produces and where they're stored 
-4. [Creating New Plugins](#4-creating-new-plugins): How to write, register, and select your own plugins for an MDP metric collection
-5. [Calling External Programs from Plugins](#5-calling-external-programs-from-plugins): How to use external tools (e.g., Plaso) within an MDP plugin
-
+4. [Creating New Plugins](#4-creating-new-plugins): 
+   - How to write, register, and select your own plugins for an MDP metric collection in general. 
+   - Information on existing utility functions (i.e., Windows registry parsing utilities). 
+   - Guidance on how to use external tools (e.g., Plaso) within an MDP plugin. 
 
 
 # 1. Run MDP
@@ -158,6 +159,7 @@ MDP produces the following results:
 
 # 4. Creating new Plugins
 
+## 4.1. General Plugin Structure and Registration
 To create a new plugin it’s easiest to copy an existing one from the `mdp_plugins/` directory (e.g., `disk_size.py`) and adapt it to your needs.
 
 To include the plugin in your metric collection runs, you need to:
@@ -212,7 +214,11 @@ To include the plugin in your metric collection runs, you need to:
 > You should make sure that your plugin always returns the same result fields (returning None for each field where no value was retrieved). This ensures consistent column ordering across all disk image results. 
 > This is achieved by defining the `expected_results` list in your plugin and using the base class’s result-handling methods (`create_result()`, `set_result()`, and `set_results()`) exclusively to initialize and populate result fields.
 
-# 5. Calling External Programs from Plugins
+## 4.2. Existing Utility Functions (i.e., Windows Registry Utils)
+
+Some utility functions that simplify access to Windows Registry keys and values are provided in `utils/windows_registry_utils.py`.
+
+## 4.3. Calling External Programs from Plugins
 
 It's also possible that a plugin invokes external tools and parses their output as part of the metric collection process.
 The `mdp_plugins/external_program_demo.py` plugin demonstrates how to run a simple external command using Python’s subprocess module.
