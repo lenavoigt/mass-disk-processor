@@ -30,6 +30,6 @@ enabled_plugins = [
     "win_num_wifi_connections",
 
     # External
-    # "external_program_demo",
-    "plaso"
+    # # "external_program_demo",
+    # "plaso"
 ]
