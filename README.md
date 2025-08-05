@@ -9,7 +9,7 @@ In our paper, we collected metrics for publicly available, synthetic, scenario-b
 
 Also, in [our FAUbox drive](https://faubox.rrze.uni-erlangen.de/getlink/fiSyw7S4EbaxZLqQgCArbQ/), we provide **Plaso timelines** for these disk images.
 
-# Table of Contents:
+# Table of Contents
 
 This README is structured to guide you through:
 1. [Run MDP](#1-run-mdp): How to execute the tool on disk image datasets
