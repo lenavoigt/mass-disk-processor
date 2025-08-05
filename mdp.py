@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 import mdp_lib.disk_image_info
-import mdp_lib.plugin_result
+import mdp_lib.mdp_plugin
 from config.config import populate_file_signatures, populate_file_hashes_and_signatures
 from config.plugin_config import enabled_plugins
 from plugin_registry import load_enabled_plugins

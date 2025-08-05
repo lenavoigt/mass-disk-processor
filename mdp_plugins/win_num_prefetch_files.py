@@ -1,14 +1,13 @@
 import re
 
-import mdp_lib.plugin_result
+from mdp_lib.mdp_plugin import MDPPlugin
 from mdp_lib.disk_image_info import TargetDiskImage
 
-
-class WinNumberOfPrefetchFiles(object):
+class WinNumberOfPrefetchFiles(MDPPlugin):
 
     name = 'win_no_prefetch_files'
     description = 'Number of prefetch files within the folder Windows/Prefetch'
-    include_in_data_table = True
+    expected_results = ['no_prefetch_files']
 
     def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
@@ -28,16 +27,6 @@ class WinNumberOfPrefetchFiles(object):
                 if re.match('P_[0-9]+/Windows/Prefetch/.*\\.pf$', each.full_path, re.IGNORECASE):
                     count += 1
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'no_prefetch_files': count}
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = WinNumberOfPrefetchFiles()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {'no_prefetch_files': count})
+        return result

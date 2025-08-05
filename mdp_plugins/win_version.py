@@ -1,19 +1,17 @@
-# from distutils.command.install import value
-
 import os
 import re
 
 from Registry import Registry
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class WinVersion(object):
-
+class WinVersion(MDPPlugin):
     name = 'win_version'
     description = 'Gets detail about Windows version from Registry'
-    include_in_data_table = True
+    expected_results = ['win_build', 'win_build_inferred_os', 'win_registered_org_present',
+                        'win_registered_owner_present', 'win_version_id', 'win_version_str']
 
     def process_disk(self, target_disk_image: TargetDiskImage):
 
@@ -66,7 +64,7 @@ class WinVersion(object):
                 #     res.results['win_version_release'] = "unknown"
 
                 try:
-                    version_val = key.value('CurrentBuild')   # > 22000 should indicate Win 11
+                    version_val = key.value('CurrentBuild')  # > 22000 should indicate Win 11
                     win_build = version_val.value()
                     win_build_inferred_os = 'unknown'
                     try:
@@ -100,7 +98,7 @@ class WinVersion(object):
                         if version_val.value() == '2222A':
                             win_build_inferred_os = 'Windows 98 SE'
                         elif version_val.value() == '1.511.1 () (Obsolete data - do not use)':
-                                # CurrentBuild seems to have this value for XP
+                            # CurrentBuild seems to have this value for XP
                             build_lab_val = key.value('BuildLab').value()
                             build_lab_str = build_lab_val.split('.')[0]
                             win_build = build_lab_str
@@ -130,31 +128,19 @@ class WinVersion(object):
                     else:
                         win_registered_org_present = False
                 except:
-                    #print("reg value not found (RegisteredOrganization)")
+                    # print("reg value not found (RegisteredOrganization)")
                     break
 
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
 
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {'win_build': win_build,
+                                  'win_build_inferred_os': win_build_inferred_os,
+                                  'win_registered_org_present': win_registered_org_present,
+                                  'win_registered_owner_present': win_registered_owner_present,
+                                  'win_version_id': win_version_id,
+                                  'win_version_str': win_version_str
+                                  })
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-
-        res.results = {'win_build': win_build,
-                       'win_build_inferred_os': win_build_inferred_os,
-                       'win_registered_org_present': win_registered_org_present,
-                       'win_registered_owner_present': win_registered_owner_present,
-                       'win_version_id': win_version_id,
-                       'win_version_str': win_version_str
-                       }
-
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = WinVersion()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        return result

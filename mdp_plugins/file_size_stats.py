@@ -1,14 +1,22 @@
 import pytsk3
-
-import mdp_lib.plugin_result
-from mdp_lib.disk_image_info import TargetDiskImage
 import statistics
-import mdp_plugins.disk_size
 
-class FileSizeStats(object):
+import mdp_plugins.disk_size
+from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
+
+
+class FileSizeStats(MDPPlugin):
     name = 'file_sizes'
     description = 'Size of data on drive'
-    include_in_data_table = True
+    expected_results = [
+        'file_size_total',
+        'file_size_total_blocks',
+        'file_size_mean',
+        'file_size_median',
+        'disk_usage_by_file_size',
+        'disk_usage_by_file_size_blocks'
+    ]
 
     def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
@@ -72,12 +80,13 @@ class FileSizeStats(object):
             mean_size = None
             median_size = None
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'file_size_total': total_logical,
-                       'file_size_total_blocks': total_file_blocks,
-                       'file_size_mean': mean_size,
-                       'file_size_median': median_size,
-                       'disk_usage_by_file_size': disk_usage_by_files,
-                       'disk_usage_by_file_size_blocks': disk_usage_by_file_blocks # considers blockpadding...
-                       }
-        return res
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {
+            'file_size_total': total_logical,
+            'file_size_total_blocks': total_file_blocks,
+            'file_size_mean': mean_size,
+            'file_size_median': median_size,
+            'disk_usage_by_file_size': disk_usage_by_files,
+            'disk_usage_by_file_size_blocks': disk_usage_by_file_blocks # considers blockpadding...
+        })
+        return result

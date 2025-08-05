@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from typing import List
 
-from mdp_lib.plugin_result import MDPResult
+from mdp_lib.mdp_plugin import MDPResult
 
 
 def generate_result_file_names():
@@ -26,7 +26,7 @@ def generate_summary_table_dict(result_list: List[MDPResult]):
                 output_dict[each_result.source_file] = {}
 
             for each_plugin in each_result.results:
-                output_dict[each_result.source_file][each_plugin] = {'plugin_name': each_result.plugin, 'result_value': each_result.results[each_plugin]}
+                output_dict[each_result.source_file][each_plugin] = {'plugin_name': each_result.plugin_name, 'result_value': each_result.results[each_plugin]}
 
     return output_dict
 

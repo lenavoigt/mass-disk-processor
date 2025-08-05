@@ -3,15 +3,16 @@ import re
 import subprocess
 
 import config.config as config
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class Plaso(object):
+class Plaso(MDPPlugin):
 
     name = 'plaso'
     description = 'Run plaso against disk'
     include_in_data_table = True
+    expected_results = []  # dynamically generated
 
     # Note: this plugin increases processing time drastically for the first run,
     #   plugin result fields are generated dynamically based on event_types detected by plaso, no predetermined results-list
@@ -30,7 +31,6 @@ class Plaso(object):
 
         path_to_plaso_csv = f"{prefix}.plaso.csv"
         pinfo_txt = f"{prefix}.pinfo.txt"
-
 
         # check if plaso-output folder exists
         plaso_folder_exists = os.path.exists(plaso_folder)
@@ -104,7 +104,6 @@ class Plaso(object):
             with open(pinfo_txt, 'w') as f:
                 f.write(pinfo_output)
 
-
         # Extract all lines from pinfo that are like: "event_type_name : 123"
         # create list of event_types dynamically
         count_dict = {}
@@ -120,24 +119,13 @@ class Plaso(object):
         for _ in f:
             count += 1
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'plaso_events_csv_total': count}
+        result = self.create_result(target_disk_image)
+        result.results['plaso_events_csv_total'] = count
 
         for each in count_dict:
-            res.results['plaso_{}'.format(each)] = count_dict[each]
+            result.results['plaso_{}'.format(each)] = count_dict[each]
 
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = Plaso()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
-
+        return result
 
 # full list of plaso plugins (2024-03-27)
 # from log2timeline.py --info

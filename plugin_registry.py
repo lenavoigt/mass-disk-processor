@@ -3,7 +3,7 @@ from typing import List
 # General
 from mdp_plugins import (
     disk_size,
-    disk_image_lifespan,
+    fs_lifespan,
     no_files,
     no_partitions,
     no_partition_types,
@@ -51,7 +51,7 @@ plugin_registry = {
     "num_user_files": num_user_files.NumberOfUserFiles,
     "file_types": file_types.FileTypes,
     "file_size_stats": file_size_stats.FileSizeStats,
-    "disk_image_lifespan": disk_image_lifespan.Lifespan,
+    "fs_lifespan": fs_lifespan.FSLifespan,
     "operating_system_detect": operating_system_detect.EstimateOS,
 
     # Browser history

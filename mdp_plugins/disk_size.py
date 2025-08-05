@@ -1,12 +1,11 @@
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class DiskSize(object):
-
+class DiskSize(MDPPlugin):
     name = 'disk_size'
-    description = 'Gets total size of the disk image (as raw)'
-    include_in_data_table = True
+    description = 'Collects basic disk size information'
+    expected_results = ["disk_size", "total_sectors"]
 
     @staticmethod
     def get_disk_size(disk_image):
@@ -27,16 +26,17 @@ class DiskSize(object):
         max_sector = max((part.start + part.len for part in parts), default=None)
         return max_sector
 
-
     def process_disk(self, target_disk_image: TargetDiskImage):
 
         disk_image = target_disk_image.accessor
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'disk_size': self.get_disk_size(disk_image),
-                       'total_sectors': self.get_total_sectors(disk_image)}
-        return res
+        res = self.create_result(target_disk_image)
+        self.set_results(res, {
+            "disk_size": self.get_disk_size(disk_image),
+            "total_sectors": self.get_total_sectors(disk_image)
+        })
 
+        return res
 
 
 # just a way to test a plugin quickly
@@ -44,6 +44,6 @@ if __name__ == '__main__':
     a = DiskSize()
 
     test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
+    disk_image_object = TargetDiskImage(test_image_path)
     res = a.process_disk(disk_image_object)
     print(res)

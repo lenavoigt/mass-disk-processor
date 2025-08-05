@@ -4,15 +4,17 @@ import re
 
 from Registry import Registry
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class WinUSBCount(object):
-
+class WinUSBCount(MDPPlugin):
     name = 'win_no_usbs'
     description = 'Scrapes Setupapi for attached USB mass storage devices, checks Windows registry for USB'
-    include_in_data_table = True
+    expected_results = ['num_usb_mass_storage_attached_setupapi', 'num_usb_reg_USB', 'num_usb_reg_USBSTOR',
+                        'num_usb_reg_dev_classes', 'num_usb_reg_mounted_dev', 'num_usb_reg_portable_dev',
+                        'num_usb_reg_usbccgp', 'num_usb_reg_usbhub', 'num_usb_reg_user_assist_max',
+                        'num_usb_reg_user_assist_total']
 
     @staticmethod
     def get_setup_api_usb(files):
@@ -126,7 +128,7 @@ class WinUSBCount(object):
                         elif key == r"ControlSet001\Enum\USBSTOR":
                             reg_usbstor_count = value_count
                             # print("in registry: USBSTOR")
-                        elif key ==  r"ControlSet001\Control\DeviceClasses":
+                        elif key == r"ControlSet001\Control\DeviceClasses":
                             reg_dev_classes = value_count
                             # print("in registry: DeviceClasses")
                         elif key == r"ControlSet001\Services\usbccgp":
@@ -172,28 +174,22 @@ class WinUSBCount(object):
 
         setup_api_usb_count = self.get_setup_api_usb(files)
 
-        reg_usb_count, reg_usbstor_count, reg_portable_dev, reg_dev_classes, reg_usbccgp, reg_usbhub, reg_mounted_dev, reg_user_assist_counts = self.get_reg_usb(files)
+        reg_usb_count, reg_usbstor_count, reg_portable_dev, reg_dev_classes, reg_usbccgp, reg_usbhub, reg_mounted_dev, reg_user_assist_counts = self.get_reg_usb(
+            files)
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'num_usb_mass_storage_attached_setupapi': setup_api_usb_count,
-                       'num_usb_reg_USB': reg_usb_count,
-                       'num_usb_reg_USBSTOR': reg_usbstor_count,
-                       'num_usb_reg_portable_dev': reg_portable_dev,
-                       'num_usb_reg_dev_classes': reg_dev_classes,
-                       'num_usb_reg_usbccgp': reg_usbccgp,
-                       'num_usb_reg_usbhub': reg_usbhub,
-                       'num_usb_reg_mounted_dev': reg_mounted_dev,
-                       'num_usb_reg_user_assist_total': sum(reg_user_assist_counts) if reg_user_assist_counts else None,
-                       'num_usb_reg_user_assist_max': max(reg_user_assist_counts) if reg_user_assist_counts else None
-                       }
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {'num_usb_mass_storage_attached_setupapi': setup_api_usb_count,
+                                  'num_usb_reg_USB': reg_usb_count,
+                                  'num_usb_reg_USBSTOR': reg_usbstor_count,
+                                  'num_usb_reg_portable_dev': reg_portable_dev,
+                                  'num_usb_reg_dev_classes': reg_dev_classes,
+                                  'num_usb_reg_usbccgp': reg_usbccgp,
+                                  'num_usb_reg_usbhub': reg_usbhub,
+                                  'num_usb_reg_mounted_dev': reg_mounted_dev,
+                                  'num_usb_reg_user_assist_total': sum(
+                                      reg_user_assist_counts) if reg_user_assist_counts else None,
+                                  'num_usb_reg_user_assist_max': max(
+                                      reg_user_assist_counts) if reg_user_assist_counts else None
+                                  })
 
-        return res
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = WinUSBCount()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        return result

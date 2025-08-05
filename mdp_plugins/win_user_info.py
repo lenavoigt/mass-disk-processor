@@ -3,15 +3,14 @@ import struct
 
 from Registry import Registry
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class UserInfo(object):
-
+class UserInfo(MDPPlugin):
     name = 'win_user_info'
     description = 'Gets information about Windows users'
-    include_in_data_table = True
+    expected_results = ['win_max_login_count', 'win_total_login_count', 'win_no_users']
 
     def process_disk(self, target_disk_image: TargetDiskImage):
 
@@ -22,9 +21,6 @@ class UserInfo(object):
         login_count = None
         login_total = None
         no_users = None
-
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {}
 
         for each_file in files:
             if re.search('Windows/System32/config/SAM$', each_file.full_path, re.IGNORECASE) is not None:
@@ -68,18 +64,8 @@ class UserInfo(object):
                     login_total = sum(range_of_login_counts)
                     no_users = len(range_of_login_counts)
 
-        res.results['win_max_login_count'] = login_count
-        res.results['win_total_login_count'] = login_total
-        res.results['win_no_users'] = no_users
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {'win_max_login_count': login_count, 'win_total_login_count': login_total,
+                                  'win_no_users': no_users})
 
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = UserInfo()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        return result

@@ -3,17 +3,15 @@ import re
 
 from Registry import Registry
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
 # Note: This plugin might collect personal information
-class WinComputerAndUserName(object):
-
+class WinComputerAndUserName(MDPPlugin):
     name = 'computer_and_user_names'
     description = 'Gets computer name and user names from the Windows registry'
-    include_in_data_table = True
-
+    expected_results = ['computer_name', 'user_names']
 
     @staticmethod
     def get_usernames_from_sam(files):
@@ -77,18 +75,7 @@ class WinComputerAndUserName(object):
         user_names = self.get_usernames_from_sam(files)
         computer_name = self.get_computer_name(files)
 
-
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'computer_name': computer_name,
-                        'user_names': ';'.join(user_names) if user_names else None}
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = WinComputerAndUserName()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {'computer_name': computer_name,
+                                  'user_names': ';'.join(user_names) if user_names else None})
+        return result

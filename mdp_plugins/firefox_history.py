@@ -1,22 +1,24 @@
-# from distutils.command.install import value
-
-# import os
-# import re
-# import sqlite3
-
-import mdp_lib.plugin_result
+from mdp_lib.browser_history import BrowserHistory, GoogleSearch, BingSearch, DuckDuckGoSearch
 from mdp_lib.disk_image_info import TargetDiskImage
-from mdp_lib.browser_history import BrowserHistory, GoogleSearch, BingSearch, DuckDuckGoSearch, SearchEngine
 
 
 class FirefoxHistory(BrowserHistory):
     name = 'firefox_history'
     description = 'Information about the Mozilla Firefox history in moz_places of places.sqlite'
     # NOTE: This doesnt work for MacOS atm
-    include_in_data_table = True
+    expected_results = [
+        'firefox_no_history_files',
+        'firefox_history_entries_max',
+        'firefox_history_entries_total',
+        'firefox_google_searches_max',
+        'firefox_google_searches_total',
+        'firefox_bing_searches_max',
+        'firefox_bing_searches_total',
+        'firefox_duckduckgo_searches_max',
+        'firefox_duckduckgo_searches_total',
+    ]
 
     def process_disk(self, target_disk_image: TargetDiskImage):
-
         pattern_windows = r'/(Users|Documents and Settings|Dokumente und Einstellungen)/[^/]+/(AppData/Roaming|Application Data|Anwendungsdaten)/Mozilla/Firefox/Profiles/[^/]+\.default[^/]*'
                 # C:\Users\<username>\AppData\Roaming\Mozilla\Firefox\Profiles\xxxxxxxx.default\places.sqlite
                 # C:\Documents and Settings\<username>\Application Data\Mozilla\Firefox\Profiles\xxxxxxxx.default\places.sqlite
@@ -30,21 +32,19 @@ class FirefoxHistory(BrowserHistory):
 
         # noinspection SqlResolve, SqlNoDataSourceInspection
         query = """
-            SELECT
-                moz_places.url,
-                moz_places.visit_count
-            FROM
-                moz_places
-            """
+                SELECT moz_places.url,
+                       moz_places.visit_count
+                FROM moz_places \
+                """
 
         search_engines = [GoogleSearch(), BingSearch(), DuckDuckGoSearch()]
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-
-        res.results = super().analyze_history_file('firefox', target_disk_image, firefox_places_pattern, query,
+        result_dict = super().analyze_history_file('firefox', target_disk_image, firefox_places_pattern, query,
                                                    search_engines)
+        result = self.create_result(target_disk_image)
+        self.set_results(result, result_dict)
 
-        return res
+        return result
 
         # Maybe at some point we'll also want to do sth with the visit date and other stuff?
         # query = """
@@ -63,13 +63,3 @@ class FirefoxHistory(BrowserHistory):
         #                         ORDER BY
         #                             moz_places.id ASC;
         #                         """
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = FirefoxHistory()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)

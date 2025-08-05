@@ -4,14 +4,22 @@ from typing import List
 
 from marple.file_object import FileItem
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class FileTypes(object):
+class FileTypes(MDPPlugin):
     name = 'file_types'
     description = 'Number of different file types. (And number of file signature mismatches if file signature fields are populated.)'
-    include_in_data_table = True
+    expected_results = [
+        'pdf_files',
+        'office_files',
+        'image_files',
+        'audio_files',
+        'video_files',
+        'compressed_files',
+        'no_signature_mismatches'
+    ]
 
     # NOTE: This is just a first suggestion of which categories of file types to create and what to include
     # This dict should probably be stored somewhere else
@@ -78,7 +86,6 @@ class FileTypes(object):
         #     '.hc'
         # }
 
-
     @staticmethod
     def is_mismatch_file_signature_with_offset(encountered_signature: str, expected_signature: str, byte_offset: int) -> bool:
         expected_len = len(expected_signature)
@@ -98,7 +105,6 @@ class FileTypes(object):
             return True
 
         return False
-
 
     def is_mismatch_file_signature_and_extension(self, encountered_signature: str, file_extension: str) -> bool:
 
@@ -122,7 +128,6 @@ class FileTypes(object):
 
         # uncertainty -> not a certain mismatch
         return False
-
 
     def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
@@ -163,22 +168,12 @@ class FileTypes(object):
                             # print('File: ', each.full_path, '\nSignature: ', each.signature, '; File Ext: ', file_ext)
                     break
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
+        result = self.create_result(target_disk_image)
 
         for category, count in file_category_count.items():
-            res.results[category] = count
+            self.set_result(result, category, count)
             # print(f"{category}: {count}")
 
-        res.results['no_signature_mismatches'] = no_signature_mismatches
+        self.set_result(result, 'no_signature_mismatches', no_signature_mismatches)
 
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = FileTypes()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        return result

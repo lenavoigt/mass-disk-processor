@@ -5,19 +5,27 @@ import struct
 
 from Registry import Registry
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class WinOSLifespan(object):
-
+class WinOSLifespan(MDPPlugin):
     name = 'win_os_lifespan'
     description = 'Gets the installation date of Windows from Registry'
-    include_in_data_table = True
+    expected_results = [
+        'windows_install_time',
+        'windows_last_shutdown_time',
+        'windows_install_year_month',
+        'windows_last_shutdown_year_month',
+        'windows_install_year',
+        'windows_last_shutdown_year',
+        'win_os_lifetime',
+        'win_os_lifetime_str'
+    ]
 
     def get_win_install_date(self, files):
         temp_filename = 'export.bin'
-        installdate = ''
+        installdate = None
 
         for each_file in files:
             if re.match(r'P_[0-9]+/Windows/System32/config/software$', each_file.full_path, re.IGNORECASE) is not None:
@@ -48,17 +56,16 @@ class WinOSLifespan(object):
 
                 except Registry.RegistryKeyNotFoundException:
                     # print('Windows CurrentVersion key not found')
-                    installdate = None
                     break
 
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
-        return installdate
 
+        return installdate
 
     def get_win_last_shutdown(self, files):
         temp_filename = 'export.bin'
-        last_shutdown = ''
+        last_shutdown = None
 
         for each_file in files:
             if re.search('P_[0-9]+/Windows/System32/config/system$', each_file.full_path, re.IGNORECASE) is not None:
@@ -96,16 +103,15 @@ class WinOSLifespan(object):
                     # print(shutdown_val_data.value())
                     time_int = struct.unpack("<Q", shutdown_val_data.value())[0]
                     as_unix = (time_int - 116444736000000000) / 10000000
-                    res = datetime.datetime.utcfromtimestamp(as_unix)
+                    last_shutdown = datetime.datetime.utcfromtimestamp(as_unix)
 
                     # for value in system_win_key.values():
                     #     print(value.name(), value.value())
 
-
                     if os.path.exists(temp_filename):
                         os.remove(temp_filename)
 
-                    return res
+                    return last_shutdown
                 except Registry.RegistryValueNotFoundException:
                     # print('ShutdownTime value not found')
                     break
@@ -113,53 +119,37 @@ class WinOSLifespan(object):
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
 
-    def process_disk(self, target_disk_image: TargetDiskImage):
+        return last_shutdown
 
+    def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
         files = disk_image.files
 
         install_date = self.get_win_install_date(files)
         last_shutdown = self.get_win_last_shutdown(files)
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
+        install_str = str(install_date) if install_date else None
+        shutdown_str = str(last_shutdown) if last_shutdown else None
 
-        res.results = {}
-        if install_date is not None:
-            res.results['windows_install_time'] = str(install_date)
-        else:
-            res.results['windows_install_time'] = ''
+        result_values = {
+            'windows_install_time': install_str,
+            'windows_last_shutdown_time': shutdown_str,
+            'windows_install_year_month': install_str[:7] if install_str else None,
+            'windows_last_shutdown_year_month': shutdown_str[:7] if shutdown_str else None,
+            'windows_install_year': install_str[:4] if install_str else None,
+            'windows_last_shutdown_year': shutdown_str[:4] if shutdown_str else None
+        }
 
-        if last_shutdown is not None:
-            res.results['windows_last_shutdown_time'] = str(last_shutdown)
-        else:
-            res.results['windows_last_shutdown_time'] = ''
-
-
-        res.results['windows_install_year_month'] = res.results['windows_install_time'][0:7]
-        res.results['windows_last_shutdown_year_month'] = res.results['windows_last_shutdown_time'][0:7]
-        res.results['windows_install_year'] = res.results['windows_install_time'][0:4]
-        res.results['windows_last_shutdown_year'] = res.results['windows_last_shutdown_time'][0:4]
-
-        if last_shutdown is not None and install_date is not None:
+        if install_date and last_shutdown:
             diff_datetime = last_shutdown - install_date
-            diff_in_secs = diff_datetime.days * 24 * 3600 + diff_datetime.seconds   #  might be able to replace with .total_seconds()
-            # diff_str = str(diff_datetime)
-            # print('diff: {} ({})'.format(diff_in_secs, diff_str))
+            result_values[
+                'win_os_lifetime'] = diff_datetime.days * 24 * 3600 + diff_datetime.seconds  # might be able to replace with .total_seconds()
+            result_values['win_os_lifetime_str'] = str(diff_datetime)
         else:
-            diff_datetime = ''
-            diff_in_secs = ''
+            result_values['win_os_lifetime'] = None
+            result_values['win_os_lifetime_str'] = None
 
-        res.results['win_os_lifetime'] = diff_in_secs
-        res.results['win_os_lifetime_str'] = str(diff_datetime)
+        result = self.create_result(target_disk_image)
+        self.set_results(result, result_values)
 
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = WinOSLifespan()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        return result

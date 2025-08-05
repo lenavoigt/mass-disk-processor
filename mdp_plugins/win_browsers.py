@@ -1,18 +1,17 @@
-# from distutils.command.install import value
-
 import os
 import re
 
 from Registry import Registry
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class WinBrowsers(object):
+class WinBrowsers(MDPPlugin):
     name = 'win_browsers'
     description = 'Gets information about the installed browsers and default browsers (currently only supports Edge, Chrome, Firefox).'
-    include_in_data_table = True
+    expected_results = ['chrome_default', 'chrome_present', 'edge_default', 'edge_present', 'firefox_default',
+                        'firefox_present']
 
     def process_disk(self, target_disk_image: TargetDiskImage):
 
@@ -42,7 +41,7 @@ class WinBrowsers(object):
                 # TODO: check filesize is > 0
                 try:
                     reg = Registry.Registry(temp_filename)
-                except Exception: # TODO: work out what the correct exception to handle is!
+                except Exception:  # TODO: work out what the correct exception to handle is!
                     print('error opening registry file: {} ({} bytes)'.format(each_file.full_path, each_file.file_size))
                     break
 
@@ -74,9 +73,7 @@ class WinBrowsers(object):
                         # print(f"Registry key not found: {key}")
                         break
 
-
                 os.remove(temp_filename)
-
 
             # Check for default browsers in registry
             if re.search('NTUSER.DAT$', each_file.full_path, re.IGNORECASE) is not None:
@@ -90,16 +87,16 @@ class WinBrowsers(object):
                 # TODO: check filesize is > 0
                 try:
                     reg = Registry.Registry(temp_filename)
-                except Exception: # TODO: work out what the correct exception to handle is!
+                except Exception:  # TODO: work out what the correct exception to handle is!
                     print('error opening registry file: {} ({} bytes)'.format(each_file.full_path, each_file.file_size))
                     break
 
-
                 # NOTE: Currently only going with one registry key
-                relevant_registry_keys = ["Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice",
-                                          #"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.html\\UserChoice",
-                                          # "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" # for Windows XP
-                                          ]
+                relevant_registry_keys = [
+                    "Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice",
+                    # "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.html\\UserChoice",
+                    # "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" # for Windows XP
+                    ]
 
                 for key in relevant_registry_keys:
                     try:
@@ -124,7 +121,7 @@ class WinBrowsers(object):
                             # print("Unknown browser detected")
                     except Registry.RegistryKeyNotFoundException:
                         # print(f"Registry key not found: {key}")
-                        #break
+                        # break
                         pass
 
                 os.remove(temp_filename)
@@ -137,24 +134,12 @@ class WinBrowsers(object):
             firefox_present = None
             firefox_default = None
 
-
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-
-        res.results = {'edge_present': edge_present,
-                       'chrome_present': chrome_present,
-                       'firefox_present': firefox_present,
-                       'edge_default': edge_default,
-                       'chrome_default': chrome_default,
-                       'firefox_default': firefox_default
-                       }
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = WinBrowsers()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {'edge_present': edge_present,
+                                  'chrome_present': chrome_present,
+                                  'firefox_present': firefox_present,
+                                  'edge_default': edge_default,
+                                  'chrome_default': chrome_default,
+                                  'firefox_default': firefox_default
+                                  })
+        return result

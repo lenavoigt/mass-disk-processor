@@ -1,25 +1,18 @@
-# from distutils.command.install import value
-
 import os
 import re
 
 from Registry import Registry
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class WinScreenResolution(object):
-
+class WinScreenResolution(MDPPlugin):
     name = 'win_screen_resolution'
-    description = 'Gets information about screen resolution from the Windows registry'
-    # TODO: add support for other windows versions
-    include_in_data_table = True
+    description = 'Gets information about (latest set) screen resolution from the Windows registry (Win 7+)'
+    expected_results = ['screen_resolution_x', 'screen_resolution_y', 'screen_ratio', 'screen_pixels']
 
-    def process_disk(self, target_disk_image: TargetDiskImage):
-
-        disk_image = target_disk_image.accessor
-        files = disk_image.files
+    def get_screen_resolution_x_y(self, files):
 
         temp_filename = 'export.bin'
 
@@ -72,25 +65,21 @@ class WinScreenResolution(object):
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        # res.results['screen_resolution_guid'] = latest_change_guid
-        res.results['screen_resolution_x'] = screen_resolution_x
-        res.results['screen_resolution_y'] = screen_resolution_y
-        if screen_resolution_x is not None and screen_resolution_y is not None:
-            res.results['screen_ratio'] = screen_resolution_x / screen_resolution_y
-            res.results['screen_pixels'] = screen_resolution_x * screen_resolution_y
-        else:
-            res.results['screen_ratio'] = None
-            res.results['screen_pixels'] = None
+        return screen_resolution_x, screen_resolution_y
 
-        return res
+    def process_disk(self, target_disk_image: TargetDiskImage):
 
+        disk_image = target_disk_image.accessor
+        files = disk_image.files
 
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = WinScreenResolution()
+        screen_resolution_x, screen_resolution_y = self.get_screen_resolution_x_y(files)
 
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {
+            'screen_resolution_x': screen_resolution_x,
+            'screen_resolution_y': screen_resolution_y,
+            'screen_ratio': screen_resolution_x / screen_resolution_y if screen_resolution_x and screen_resolution_y else None,
+            'screen_pixels': screen_resolution_x * screen_resolution_y if screen_resolution_x and screen_resolution_y else None,
+        })
+
+        return result

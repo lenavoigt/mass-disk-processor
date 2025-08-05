@@ -1,12 +1,12 @@
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class NumberOfPartitions(object):
+class NumberOfPartitions(MDPPlugin):
 
     name = 'no_partitions'
     description = 'Number of partitions'
-    include_in_data_table = True
+    expected_results = ['no_partitions']
 
     def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
@@ -18,7 +18,6 @@ class NumberOfPartitions(object):
             no_partitions = None
         # print('no_partitions: {}'.format(no_partitions))
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'no_partitions': no_partitions}
-        return res
-
+        result = self.create_result(target_disk_image)
+        self.set_result(result, 'no_partitions', no_partitions)
+        return result

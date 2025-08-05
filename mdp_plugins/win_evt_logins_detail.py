@@ -4,14 +4,15 @@ import re
 import Evtx.Evtx as evtx
 import xmltodict
 
-import mdp_lib.plugin_result
+from mdp_lib.mdp_plugin import MDPPlugin
 from mdp_lib.disk_image_info import TargetDiskImage
 
 
-class EVTXLoginsDetail(object):
+class EVTXLoginsDetail(MDPPlugin):
 
     name = 'EVT logins details'
     description = 'Retrieves full list of login details from Security.evtx'
+    expected_results = ['logins']
     include_in_data_table = False
 
     def process_disk(self, target_disk_image: TargetDiskImage):
@@ -71,16 +72,6 @@ class EVTXLoginsDetail(object):
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = { 'logins': login_list}
-        return res
-
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = EVTXLoginsDetail()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        result = self.create_result(target_disk_image)
+        self.set_results(result, { 'logins': login_list})
+        return result

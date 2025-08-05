@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 # corresponds to pytsk3.TSK_FS_TYPE_ENUM... this should probably be elsewhere
 TSK_FS_TYPE_REVERSE = {
@@ -26,11 +26,11 @@ TSK_FS_TYPE_REVERSE = {
     4294967295: 'unsupported'
 }
 
-class NumberOfPartitionTypes(object):
 
+class NumberOfPartitionTypes(MDPPlugin):
     name = 'no_partition_types'
     description = 'Number of partitions of different fs types'
-    include_in_data_table = True
+    expected_results = [f'fs_type_count_{fs_name}' for fs_name in set(TSK_FS_TYPE_REVERSE.values())]
 
     def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
@@ -68,7 +68,6 @@ class NumberOfPartitionTypes(object):
                     # print(f"Error reading FS on partition at sector {partition.start}: {e}")
                     continue
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {**fs_type_counts}
-        return res
-
+        result = self.create_result(target_disk_image)
+        self.set_results(result, fs_type_counts)
+        return result

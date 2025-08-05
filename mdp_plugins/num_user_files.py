@@ -1,14 +1,14 @@
 import re
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class NumberOfUserFiles(object):
+class NumberOfUserFiles(MDPPlugin):
 
     name = 'no_user_files'
     description = 'Number of files within the user folder (all users)'
-    include_in_data_table = True
+    expected_results = ['no_files_in_users_folder']
 
     def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
@@ -34,15 +34,6 @@ class NumberOfUserFiles(object):
                         or re.match('P_[0-9]+/home/.*', each.full_path)):
                     count += 1
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'no_files_in_users_folder': count}
-        return res
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = NumberOfUserFiles()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        result = self.create_result(target_disk_image)
+        self.set_result(result, 'no_files_in_users_folder', count)
+        return result

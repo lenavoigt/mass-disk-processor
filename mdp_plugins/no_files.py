@@ -5,16 +5,15 @@ from typing import List
 
 from marple.file_object import FileItem
 
-import mdp_lib.plugin_result
 from config.config import path_to_nsrl
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class NumberOfFiles(object):
+class NumberOfFiles(MDPPlugin):
     name = 'no_files'
     description = 'Number of files'
-    include_in_data_table = True
-
+    expected_results = ['no_files', 'no_non_nsrl_files', 'no_non_nsrl_files_incl_zero']
 
     @staticmethod
     def is_sha1_in_nsrl(sha1, conn) -> bool:
@@ -44,7 +43,6 @@ class NumberOfFiles(object):
         return bool(result)
 
     def process_disk(self, target_disk_image: TargetDiskImage):
-
         disk_image = target_disk_image.accessor
         files = disk_image.files
         no_files = len(files)
@@ -103,11 +101,13 @@ class NumberOfFiles(object):
         else:
             print('File hash fields not populated. Skipping NSRL RDS check.')
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results['no_files'] = no_files
-        res.results['no_non_nsrl_files'] =  no_non_nsrl_files
-        res.results['no_non_nsrl_files_incl_zero'] = no_non_nsrl_files_incl_zero
-        # res.results['no_nsrl'] = no_nsrl
-        # res.results['no_nsrl_non_zero'] = no_nsrl_non_zero
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {
+            'no_files': no_files,
+            'no_non_nsrl_files': no_non_nsrl_files,
+            'no_non_nsrl_files_incl_zero': no_non_nsrl_files_incl_zero
+            # 'no_nsrl' = no_nsrl
+            # 'no_nsrl_non_zero' = no_nsrl_non_zero
+        })
 
-        return res
+        return result

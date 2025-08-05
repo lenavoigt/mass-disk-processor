@@ -7,7 +7,7 @@ enabled_plugins = [
     "num_user_files",
     "file_types",
     "file_size_stats",
-    "disk_image_lifespan",
+    "fs_lifespan",
     "operating_system_detect",
 
     # Browser history

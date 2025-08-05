@@ -3,15 +3,14 @@ import re
 
 from Registry import Registry
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class WinWifiCount(object):
-
+class WinWifiCount(MDPPlugin):
     name = 'win_wifi_profiles'
     description = 'Checks Windows registry for number of wifi profiles. (Win Vista+)'
-    include_in_data_table = True
+    expected_results = ['num_wifi_profiles']
 
     @staticmethod
     def get_wifi_profiles(files):
@@ -23,7 +22,7 @@ class WinWifiCount(object):
         temp_filename = 'export.bin'
 
         for each_file in files:
-            
+
             if re.search('Windows/System32/config/SOFTWARE$', each_file.full_path, re.IGNORECASE) is not None:
 
                 f = open(temp_filename, 'wb')
@@ -56,16 +55,7 @@ class WinWifiCount(object):
         files = disk_image.files
         wifi_profile_count = self.get_wifi_profiles(files)
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
-        res.results = {'num_wifi_profiles': wifi_profile_count}
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {'num_wifi_profiles': wifi_profile_count})
 
-        return res
-
-# just a way to test a plugin quickly
-if __name__ == '__main__':
-    a = WinWifiCount()
-
-    test_image_path = 'path to disk image'
-    disk_image_object = mdp_lib.disk_image_info.TargetDiskImage(test_image_path)
-    res = a.process_disk(disk_image_object)
-    print(res)
+        return result

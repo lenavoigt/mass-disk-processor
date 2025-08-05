@@ -138,12 +138,38 @@ MDP produces the following results:
 
 # Creating new Plugins
 
-To create a new plugin it’s easiest to copy an existing one from the `mdp_plugins/` directory and adapt it to your needs.
+To create a new plugin it’s easiest to copy an existing one from the `mdp_plugins/` directory (e.g., `disk_size.py`) and adapt it to your needs.
 
 To include the plugin in your metric collection runs, you need to:
-1. **Create the new plugin file**: 
-   - Add the new file (e.g., `new_plugin.py`) to `mdp_plugins/`
-   - The plugin has to define a class (e.g., `NewPlugin(object)`) with its properties (`name`, `description`, `include_in_data_table`) and implement the `process_disk()` method
+1. **Create the new plugin**: Add the new file (e.g., `new_plugin.py`) to `mdp_plugins/`. Your plugin class should:
+   - Inherit from `MDPPlugin`
+   - Define the required class attributes:
+     ```
+      name = "new_plugin"
+      description = "Short description of what this plugin does"
+      expected_results = ["value_a", "value_b", ...]
+      ``` 
+   - Implement the `process_disk()` method, using:
+     - `self.create_result(...)` to create an MDPResult object
+     - `self.set_results(...)` or `self.set_result(...)` to set values for fields listed in `expected_results`
+   
+    Example Plugin:
+    ```
+    from mdp_lib.mdp_plugin import MDPPlugin 
+    from mdp_lib.disk_image_info import TargetDiskImage
+    
+    class NewPlugin(MDPPlugin):
+        name = "new_plugin"
+        description = "This is an example plugin."
+        expected_results = ["example_value"]
+    
+        def process_disk(self, target_disk_image: TargetDiskImage):
+            result = self.create_result(target_disk_image)
+            example_value = analyze_stuff(target_disk_image)   
+            self.set_result(result, "example_value", example_value)
+            return result
+    ```
+
 2. **Register the plugin in the `plugin_registry.py`**:
    - Import your plugin at the top (grouped by category)
    - Add it to the `plugin_registry` dictionary, e.g.:
@@ -153,7 +179,7 @@ To include the plugin in your metric collection runs, you need to:
          "new_plugin": new_plugin.NewPlugin,
       } 
       ``` 
-3. **Enable it for an MDP run**:  
+3. **Enable the plugin for an MDP run**:  
    - In `config/plugin_config.py`, add the name of your plugin (as added to the plugin registry dict) to the `enabled_plugins` list: 
      ```
       enabled_plugins = [
@@ -163,4 +189,11 @@ To include the plugin in your metric collection runs, you need to:
       ```
    - *Note: Plugins not listed in enabled_plugins will not run, even if they are imported and registered in the plugin registry*
 
-> You should make sure that your plugin always returns the same result fields (returning None for each field where no value was retrieved). This ensures consistent column ordering across all disk image results.
+> You should make sure that your plugin always returns the same result fields (returning None for each field where no value was retrieved). This ensures consistent column ordering across all disk image results. 
+> This is achieved by defining the `expected_results` list in your plugin and using the base class’s result-handling methods (`create_result()`, `set_result()`, and `set_results()`) exclusively to initialize and populate result fields.
+
+# Calling External Programs from Plugins
+
+It's also possible that a plugin invokes external tools and parses their output as part of the metric collection process.
+The `mdp_plugins/external_program_demo.py` plugin demonstrates how to run a simple external command using Python’s subprocess module.
+A more complex example is shown in `mdp_plugins/plaso.py`, where several external scripts from Plaso are executed (i.e., `log2timeline.py`, `psort.py`, and `pinfo.py`). In this plugin, the resulting logs and output files are stored and parsed to extract metric data.

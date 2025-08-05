@@ -1,10 +1,11 @@
 import os
 import re
 import sqlite3
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import List, Dict
 
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
 class SearchEngine(object):
@@ -36,7 +37,7 @@ class DuckDuckGoSearch(SearchEngine):
         super().__init__('DuckDuckGo', r"https?://(www\.)?duckduckgo\.com")
 
 
-class BrowserHistory(ABC):
+class BrowserHistory(MDPPlugin):
     name = ''
     description = ''
     include_in_data_table = False
@@ -52,7 +53,7 @@ class BrowserHistory(ABC):
     # example: analyze_history_file('chrome', target_disk_image, chrome_history_pattern, query, [GoogleSearch(), BingSearch(), DuckDuckGoSearch()])
     # query needs to give results with rows where row[0] is url and row [1] is visit_count
     def analyze_history_file(self, browser_name: str, target_disk_image: TargetDiskImage, history_pattern: str,
-                             query: str, search_engines: List[SearchEngine]):
+                             query: str, search_engines: List[SearchEngine]) -> dict[str, int | None]:
         disk_image = target_disk_image.accessor
         files = disk_image.files
 
@@ -117,14 +118,14 @@ class BrowserHistory(ABC):
                     if os.path.exists(temp_filename):
                         os.remove(temp_filename)
 
-        res = {
+        results_dict = {
             browser_name + '_no_history_files': no_history_files,
             browser_name + '_history_entries_max': history_count_max,
             browser_name + '_history_entries_total': history_count_total
         }
 
         for engine in search_engines:
-            res[browser_name + f'_{engine.name.lower()}_searches_max'] = max_search_counts[engine.name]
-            res[browser_name + f'_{engine.name.lower()}_searches_total'] = total_search_counts[engine.name]
+            results_dict[browser_name + f'_{engine.name.lower()}_searches_max'] = max_search_counts[engine.name]
+            results_dict[browser_name + f'_{engine.name.lower()}_searches_total'] = total_search_counts[engine.name]
 
-        return res
+        return results_dict

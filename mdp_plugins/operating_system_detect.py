@@ -1,14 +1,13 @@
 import re
 
-import mdp_lib.plugin_result
 from mdp_lib.disk_image_info import TargetDiskImage
+from mdp_lib.mdp_plugin import MDPPlugin
 
 
-class EstimateOS(object):
-
+class EstimateOS(MDPPlugin):
     name = 'operating_system'
     description = 'Check for OS present'
-    include_in_data_table = True
+    expected_results = ['windows_found', 'linux_found', 'mac_found']
 
     def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
@@ -32,14 +31,11 @@ class EstimateOS(object):
                 lin_found = True
                 # print('Linux found')
 
-        res = mdp_lib.plugin_result.MDPResult(target_disk_image.image_path, self.name, self.description)
+        result = self.create_result(target_disk_image)
+        self.set_results(result, {
+            'windows_found': str(win_found),  # multiple os can be reported if they are present
+            'linux_found': str(lin_found),
+            'mac_found': str(mac_found)
+        })
 
-        res.results = {'windows_found': str(win_found), # multiple os can be reported if they are present
-                       'linux_found': str(lin_found),
-                       'mac_found': str(mac_found)
-                       }
-
-        return res
-
-
-
+        return result
