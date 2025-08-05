@@ -7,6 +7,7 @@ from Registry import Registry
 
 from mdp_lib.disk_image_info import TargetDiskImage
 from mdp_lib.mdp_plugin import MDPPlugin
+from utils.windows_registry_utils import get_registry_value
 
 
 class WinOSLifespan(MDPPlugin):
@@ -23,45 +24,45 @@ class WinOSLifespan(MDPPlugin):
         'win_os_lifetime_str'
     ]
 
-    def get_win_install_date(self, files):
-        temp_filename = 'export.bin'
-        installdate = None
-
-        for each_file in files:
-            if re.match(r'P_[0-9]+/Windows/System32/config/software$', each_file.full_path, re.IGNORECASE) is not None:
-                # print('reg found')
-                # print(each_file.full_path)
-
-                f = open(temp_filename, 'wb')
-                f.write(each_file.read())
-                f.close()
-
-                # Have an exported file at this point so need to process as registry
-                # TODO update Marple so that file export is not necessary
-                # Can probably use f = io.BytesIO(b"some initial binary data: \x00\x01")
-
-                reg = Registry.Registry(temp_filename)
-
-                try:
-                    key = reg.open("Microsoft\\Windows NT\\CurrentVersion")
-                    install_date_val = key.value('InstallDate')
-                    # print(install_date_val.value())
-                    #
-                    # for value in key.values():
-                    #     print(value.name(), value.value())
-
-                    installdate = datetime.datetime.utcfromtimestamp(install_date_val.value())
-                    # print(installdate)
-                    break
-
-                except Registry.RegistryKeyNotFoundException:
-                    # print('Windows CurrentVersion key not found')
-                    break
-
-        if os.path.exists(temp_filename):
-            os.remove(temp_filename)
-
-        return installdate
+    # def get_win_install_date(self, files):
+    #     temp_filename = 'export.bin'
+    #     installdate = None
+    #
+    #     for each_file in files:
+    #         if re.match(r'P_[0-9]+/Windows/System32/config/software$', each_file.full_path, re.IGNORECASE) is not None:
+    #             # print('reg found')
+    #             # print(each_file.full_path)
+    #
+    #             f = open(temp_filename, 'wb')
+    #             f.write(each_file.read())
+    #             f.close()
+    #
+    #             # Have an exported file at this point so need to process as registry
+    #             # TODO update Marple so that file export is not necessary
+    #             # Can probably use f = io.BytesIO(b"some initial binary data: \x00\x01")
+    #
+    #             reg = Registry.Registry(temp_filename)
+    #
+    #             try:
+    #                 key = reg.open("Microsoft\\Windows NT\\CurrentVersion")
+    #                 install_date_val = key.value('InstallDate')
+    #                 # print(install_date_val.value())
+    #                 #
+    #                 # for value in key.values():
+    #                 #     print(value.name(), value.value())
+    #
+    #                 installdate = datetime.datetime.utcfromtimestamp(install_date_val.value())
+    #                 # print(installdate)
+    #                 break
+    #
+    #             except Registry.RegistryKeyNotFoundException:
+    #                 # print('Windows CurrentVersion key not found')
+    #                 break
+    #
+    #     if os.path.exists(temp_filename):
+    #         os.remove(temp_filename)
+    #
+    #     return installdate
 
     def get_win_last_shutdown(self, files):
         temp_filename = 'export.bin'
@@ -125,7 +126,10 @@ class WinOSLifespan(MDPPlugin):
         disk_image = target_disk_image.accessor
         files = disk_image.files
 
-        install_date = self.get_win_install_date(files)
+        # install_date = self.get_win_install_date(files)
+        install_time = get_registry_value(files, "SOFTWARE", "Microsoft\\Windows NT\\CurrentVersion", "InstallDate")
+        install_date = datetime.datetime.utcfromtimestamp(install_time)
+
         last_shutdown = self.get_win_last_shutdown(files)
 
         install_str = str(install_date) if install_date else None
