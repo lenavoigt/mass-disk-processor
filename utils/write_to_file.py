@@ -10,8 +10,8 @@ from mdp_lib.mdp_plugin import MDPResult
 def generate_result_file_names():
     os.makedirs('output', exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    json_filename = f"output/summary_dict_{timestamp}.json"
-    tsv_filename = f"output/data_table_{timestamp}.tsv"
+    json_filename = f"output/{timestamp}_summary_dict.json"
+    tsv_filename = f"output/{timestamp}_data_table.tsv"
     return json_filename, tsv_filename, f"output/{timestamp}.log"
 
 
