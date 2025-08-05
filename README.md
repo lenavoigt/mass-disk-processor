@@ -9,7 +9,18 @@ In our paper, we collected metrics for publicly available, synthetic, scenario-b
 
 Also, in [our FAUbox drive](https://faubox.rrze.uni-erlangen.de/getlink/fiSyw7S4EbaxZLqQgCArbQ/), we provide **Plaso timelines** for these disk images.
 
-# Run MDP
+# Table of Contents:
+
+This README is structured to guide you through:
+1. [Run MDP](#1-run-mdp): How to execute the tool on disk image datasets
+2. [Preparation](#2-preparation): Setting up the MDP Python environment, preparing the target disk image folder(s), configuring the project, selecting plugins, and (*optionally*) preparing separate environments for external tools (e.g., Plaso) executed by MDP plugins.
+3. [Results](#3-results): Outputs produced by MDP produces and where they're stored 
+4. [Creating New Plugins](#4-creating-new-plugins): How to write, register, and select your own plugins for an MDP metric collection
+5. [Calling External Programs from Plugins](#5-calling-external-programs-from-plugins): How to use external tools (e.g., Plaso) within an MDP plugin
+
+
+
+# 1. Run MDP
 
 To retrieve metrics from disk image datasets using MDP, use the following command **in your project's virtual environment** (after following the steps outlined in [Preparation](#Preparation)):
 
@@ -25,7 +36,7 @@ $ python mdp.py TestDisks
 
 You can also provide an absolute path to the target folder containing the disk image dataset.
 
-# Preparation
+# 2. Preparation
 
 Before you can run MDP, you need to:
 
@@ -39,7 +50,7 @@ These steps are detailed below.
 
 **Note**: MDP was developed and tested on macOS Sequoia and Ubuntu 22.04 using Python 3.10. The instructions below refer to this environment.
 
-## 0. Virtual Environment Setup and Dependency Installation
+## 2.0. Virtual Environment Setup and Dependency Installation
 
 We recommend setting up a virtual environment to use MDP and installing the dependencies with the following commands:
 
@@ -50,7 +61,7 @@ $ pip install -r requirements.txt
 ```
 Alternatively, you can use an IDE (e.g. PyCharm), which can handle environment setup and dependency installation.
 
-## 1. Required Folder Structure for the Disk Image Dataset
+## 2.1. Required Folder Structure for the Disk Image Dataset
 
 The target folder containing the disk images to be processed must follow this structure:
 ```
@@ -72,7 +83,7 @@ Each case folder (folder_of_case-1, folder_of_case-2, etc.) must contain a data 
 - Currently, MDP does not support split dd files. 
 - MDP does support split EWF (.e01, .e02, etc.) files.
 
-## 2. Creation and Modification of `config.py`
+## 2.2. Creation and Modification of `config.py`
 
 The file `config_example.py` is provided as a template. Before you can run MDP you need to copy it to `config.py`:
 ```
@@ -87,7 +98,7 @@ Afterwards, the default configuration in `config.py` can be modified if you want
     - Set maximum file size for hashing
 - Parameters required for using Plaso (see below)
 
-## 3. Selecting Plugins for an MDP Run
+## 2.3. Selecting Plugins for an MDP Run
 
 To control which plugins are executed during an MDP run, edit the `enabled_plugins` list in `config/plugin_config.py`. 
 
@@ -105,12 +116,14 @@ Each string in this list should match a key from the `plugin_registry` dictionar
 
 *Note:  Plugins are executed in the order they appear in this list.*
 
-## 4. _(Optional)_ Enabling the Usage of Plaso
+## 2.4. _(Optional)_ Enabling the Usage of External Tools (e.g., Plaso)
 
-> ⚠️ The Plaso plugin relies on commands that will only work on POSIX-based systems.
+> ⚠️ The MDP Plaso plugin relies on commands that will only work on POSIX-based systems.
+
+MDP plugins can use external tools to retrieve metrics. For some of these tools, it might be necessary to create a (preferably separate) virtual environment for the external tool. One currently implemented example for this is MDP's Plaso plugin.
 
 In MDP's current version, to use Plaso, you need to configure it in a virtual environment and specify its path in the `config.py` file. In `config.py`, set the following two parameters:
-- `path_to_venv_python`: Path to the virtual environment’s `activate` script.
+- `path_to_venv_python`: Path to the virtual environment’s `python3` executable.
 - `path_to_plaso_scripts`: Path to the Plaso scripts.
 
 One way to do this is by setting up Plaso in a **separate environment within the MDP project** to avoid dependency conflicts:
@@ -130,13 +143,20 @@ path_to_plaso_scripts = '<absolute-path-tp-MDP>/plaso-venv/lib/python3.10/site-p
 
 You can then activate the Plaso Plugin by uncommenting it in the `plugin_classes` list in `mdp.py`.
 
-# Results
+# 3. Results
 
 MDP produces the following results:
-- `data_table.tsv` and `summary_dict.json` containing the results for each disk image in the dataset of any plugin flagged for inclusion in the summary.
-- `results_<plugin-name>.txt` containing more detailed results (including plugin name, plugin description, full path of the source disk image file, and creation time) of each plugin within the disk image folders.
+1. In the MDP project root
+   - `output/` folder is created (if it doesn't yet exist), containing a set of overall result files (with a timestamp) for each run:
+     - `{timestamp}_summary_dict.json`: full plugin results of all disk images in dictionary form
+     - `{timestamp}_data_table.tsv`: tabular summary with one row per disk image, including only the plugins flagged for inclusion in the summary table.
+     - `{timestamp}.log`: corresponding log file.
+2. Inside each case folder (containing a `data/` folder with disk images)
+   - `results/` folder is created containing:
+     - `results_<plugin-name>.txt`: detailed plugin result file per plugin (including plugin name, description, source file path, creation timestamp, result values)
+3. For the Plaso plugin: `plaso-output/` subfolder is created in each case folder, containing several Plaso result files for each disk image in the case's `data/` folder.
 
-# Creating new Plugins
+# 4. Creating new Plugins
 
 To create a new plugin it’s easiest to copy an existing one from the `mdp_plugins/` directory (e.g., `disk_size.py`) and adapt it to your needs.
 
@@ -192,7 +212,7 @@ To include the plugin in your metric collection runs, you need to:
 > You should make sure that your plugin always returns the same result fields (returning None for each field where no value was retrieved). This ensures consistent column ordering across all disk image results. 
 > This is achieved by defining the `expected_results` list in your plugin and using the base class’s result-handling methods (`create_result()`, `set_result()`, and `set_results()`) exclusively to initialize and populate result fields.
 
-# Calling External Programs from Plugins
+# 5. Calling External Programs from Plugins
 
 It's also possible that a plugin invokes external tools and parses their output as part of the metric collection process.
 The `mdp_plugins/external_program_demo.py` plugin demonstrates how to run a simple external command using Python’s subprocess module.
