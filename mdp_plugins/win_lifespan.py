@@ -128,7 +128,7 @@ class WinOSLifespan(MDPPlugin):
 
         # install_date = self.get_win_install_date(files)
         install_time = get_registry_value(files, "SOFTWARE", "Microsoft\\Windows NT\\CurrentVersion", "InstallDate")
-        install_date = datetime.datetime.utcfromtimestamp(install_time)
+        install_date = datetime.datetime.utcfromtimestamp(install_time) if install_time else None
 
         last_shutdown = self.get_win_last_shutdown(files)
 
