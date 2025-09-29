@@ -5,6 +5,7 @@ from mdp_lib.disk_image_info import TargetDiskImage
 class FirefoxHistory(BrowserHistory):
     name = 'firefox_history'
     description = 'Information about the Mozilla Firefox history in moz_places of places.sqlite'
+    include_in_data_table = True
     # NOTE: This doesnt work for MacOS atm
     expected_results = [
         'firefox_no_history_files',

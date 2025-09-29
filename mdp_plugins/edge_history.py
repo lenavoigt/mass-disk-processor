@@ -5,6 +5,7 @@ from mdp_lib.disk_image_info import TargetDiskImage
 class EdgeHistory(BrowserHistory):
     name = 'edge_history'
     description = 'Information about the Edge history for Edge v79+, Windows 7+'
+    include_in_data_table = True
     expected_results = [
         'edge_no_history_files',
         'edge_history_entries_max',

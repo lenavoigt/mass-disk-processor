@@ -6,6 +6,7 @@ from mdp_lib.disk_image_info import TargetDiskImage
 class ChromeHistory(BrowserHistory):
     name = 'chrome_history'
     description = 'Information about the Google Chrome history from History (including chromium on Linux)'
+    include_in_data_table = True
     # NOTE: This doesnt work for MacOS atm
     expected_results = [
         'chrome_no_history_files',
