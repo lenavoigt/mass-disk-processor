@@ -5,6 +5,8 @@ import sys
 import time
 from pathlib import Path
 
+import pyewf
+
 import mdp_lib.disk_image_info
 import mdp_lib.mdp_plugin
 from config.config import populate_file_signatures, populate_file_hashes_and_signatures
@@ -46,17 +48,18 @@ def initialize_disk_image(each_disk_image: dict[str, str], current_error_summary
     each_disk_image_path = each_disk_image['path']
     each_disk_image_target_folder = each_disk_image['target_folder']
     each_disk_image_object = None
+    try:
+        ewf_chunks = pyewf.glob(each_disk_image_path)
+    except Exception as e:
+        ewf_chunks = None
+        # print("No EWF disk image found at: {}".format(each_disk_image_path))
+
     if not each_disk_image_path.endswith('.DS_Store'):  # mac os necessity
-        if each_disk_image_path[-3:] not in ['E02', 'E03', 'E04', 'E05', 'E06', 'E07', 'E08', 'E09', 'E10',
-                                             'E11', 'E12', 'E13', 'E14', 'E15', 'E16', 'E17', 'E18', 'E19', 'E20',
-                                             'E21', 'E22', 'E23', 'E24', 'E25', 'E26', 'E27', 'E28', 'E29', 'E30',
-                                             'E31', 'E32', 'E33', 'E34', 'E35', 'E36', 'E37', 'E38', 'E39', 'E40',
-                                             'E41', 'E42', 'E43', 'E44', 'E45', 'E46', 'E47', 'E48', 'E49', 'E50',
-                                             'E51', 'E52', 'E53', 'E54', 'E55', 'E56', 'E57', 'E58', 'E59', 'E60',
-                                             'E61', 'E62', 'E63', 'E64', 'E65', 'E66', 'E67', 'E68', 'E69', 'E70',
-                                             'E71', 'E72', 'E73', 'E74', 'E75', 'E76', 'E77', 'E78', 'E79', 'E80',
-                                             'E81', 'E82', 'E83', 'E84', 'E85', 'E86', 'E87', 'E88', 'E89', 'E90',
-                                             'E91', 'E92', 'E93', 'E94', 'E95', 'E96', 'E97', 'E98', 'E99']:
+        if (
+                not ewf_chunks                              # not an EWF image (i.e. dd or any other file extension)
+                or len(ewf_chunks) == 1                     # single chunk EWF file
+                or each_disk_image_path == ewf_chunks[0]    # first fragment of a multi-chunk EWF file
+        ):
             print('=============================================')
             print('processing {}...'.format(each_disk_image_path))
             print('=============================================')
@@ -81,8 +84,8 @@ def initialize_disk_image(each_disk_image: dict[str, str], current_error_summary
             except Exception as e:
                 current_error_summary.append((each_disk_image_path, 'Disk Image Initialization', e))
                 print(f'Initialization of Disk Image failed: {each_disk_image_path}: {e}')
-        else:
-            print('skipping Exx fragment ({}) - handled with E01...'.format(each_disk_image_path))
+        # else:
+        #    print('skipping Exx fragment ({}) - handled with E01...'.format(each_disk_image_path))
 
     return each_disk_image_object
 

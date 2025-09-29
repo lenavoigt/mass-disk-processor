@@ -97,18 +97,7 @@ class EwfDiskAccessor(GenericDiskAccessor):
 
 
     def get_all_parts_of_potentially_split_ewf(self):
-        all_parts = []
-        all_parts.append(self.path_to_image)
-
-        ewf_base = self.path_to_image[:-4]
-        for each in range(2, 99):
-            poss_part = ewf_base + '.E{:02}'.format(each)
-            if os.path.exists(poss_part):
-                # print('found: ' + poss_part)
-                all_parts.append(poss_part)
-            else:
-                break  # stop if we don't find the next part
-        return all_parts
+        return pyewf.glob(self.path_to_image)
 
 
 
