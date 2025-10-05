@@ -25,7 +25,8 @@ from mdp_plugins import (
     win_apps,
     win_browsers,
     win_computer_and_user_names,
-    win_evt_logs,
+
+    win_evt_logs_security,
     win_lifespan,
     win_num_prefetch_files,
     win_num_usbs,
@@ -65,7 +66,8 @@ plugin_registry = {
     "win_user_info": win_user_info.UserInfo,
     "win_computer_and_user_names": win_computer_and_user_names.WinComputerAndUserName,
     "win_screen_resolution": win_screen_resolution.WinScreenResolution,
-    "win_evt_logs": win_evt_logs.EVTXLogs,
+
+    "win_evt_logs_security": win_evt_logs_security.SecurityEVTXLogs,
     "win_apps": win_apps.WinApps,
     "win_browsers": win_browsers.WinBrowsers,
     "win_num_user_lnk_files": win_num_user_lnk_files.WinNumberOfUserLNKFiles,

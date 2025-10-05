@@ -21,7 +21,8 @@ enabled_plugins = [
     "win_user_info",
     "win_computer_and_user_names",
     "win_screen_resolution",
-    "win_evt_logs",
+
+    "win_evt_logs_security",
     "win_apps",
     "win_browsers",
     "win_num_user_lnk_files",
