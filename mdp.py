@@ -7,9 +7,18 @@ from pathlib import Path
 
 import pyewf
 
+try:
+    from config.config import populate_file_signatures, populate_file_hashes_and_signatures
+except ModuleNotFoundError:
+    logging.error("Config file not found. Ensure that /config/.config.py exists (usually you need to copy config_example.py to "
+                  "config.py and edit it).")
+    sys.exit(-1)
+
+
 import mdp_lib.disk_image_info
 import mdp_lib.mdp_plugin
-from config.config import populate_file_signatures, populate_file_hashes_and_signatures
+
+
 from config.plugin_config import enabled_plugins
 from plugin_registry import load_enabled_plugins
 from utils.write_to_file import generate_result_file_names, write_single_evidence_results_to_json, \
