@@ -3,6 +3,9 @@ import logging
 import os.path
 import sys
 import time
+import traceback
+import sys
+
 from pathlib import Path
 
 import pyewf
@@ -35,6 +38,7 @@ def parse_args():
     parser.add_argument("basepath", type=Path, help="Absolute path to the directory containing all case folders. Each "
                                                     "case must have a 'data' subfolder containing the digital "
                                                     "evidence (i.e. the .dd or .E01, .E02, ... files.")
+    parser.add_argument("--debug", action="store_true", help="Show full traceback for errors")
     args = parser.parse_args()
     if not args.basepath.exists() or not args.basepath.is_dir():
         print("Basepath provided doesn't exist or is not a directory.")
@@ -53,7 +57,7 @@ def setup_logging(log_filename):
     )
 
 
-def initialize_disk_image(each_disk_image: dict[str, str], current_error_summary):
+def initialize_disk_image(each_disk_image: dict[str, str], current_error_summary, debug_mode=False):
     each_disk_image_path = each_disk_image['path']
     each_disk_image_target_folder = each_disk_image['target_folder']
     each_disk_image_object = None
@@ -92,7 +96,12 @@ def initialize_disk_image(each_disk_image: dict[str, str], current_error_summary
                 print('File signatures retrieved: ', populate_file_signatures)
             except Exception as e:
                 current_error_summary.append((each_disk_image_path, 'Disk Image Initialization', e))
-                print(f'Initialization of Disk Image failed: {each_disk_image_path}: {e}')
+                if debug_mode:
+                    print(f'Initialization of Disk Image failed: {each_disk_image_path}: {e}')
+                    print(f'Full traceback:\n{traceback.format_exc()}')
+                else:
+                    tb = traceback.extract_tb(sys.exc_info()[2])[-1]
+                    print(f'Initialization of Disk Image failed: {each_disk_image_path}: {e}')
         # else:
         #    print('skipping Exx fragment ({}) - handled with E01...'.format(each_disk_image_path))
 
@@ -105,6 +114,7 @@ def main():
     # Command line parameter handling
     args = parse_args()
     path_to_disk_images = args.basepath
+    debug_mode = args.debug
 
     # loading user-specified enabled plugin classes
     plugin_classes = load_enabled_plugins(enabled_plugins)
@@ -124,7 +134,7 @@ def main():
     no_disk_images = 0
     for each_disk_image in disk_images:
         each_disk_image_results = []
-        each_disk_image_object = initialize_disk_image(each_disk_image, current_error_summary)
+        each_disk_image_object = initialize_disk_image(each_disk_image, current_error_summary, debug_mode)
         if each_disk_image_object:
             no_disk_images += 1
             for each_plugin in plugin_classes:
