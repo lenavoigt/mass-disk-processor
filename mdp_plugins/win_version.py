@@ -67,10 +67,26 @@ class WinVersion(MDPPlugin):
                     version_val = key.value('CurrentBuild')  # > 22000 should indicate Win 11
                     win_build = version_val.value()
                     win_build_inferred_os = 'unknown'
+                    is_server = "server" in win_version_str.lower()
                     try:
                         # https://en.wikipedia.org/wiki/List_of_Microsoft_Windows_versions
+                        # https://www.gaijin.at/en/infos/windows-version-numbers
                         version_int = int(version_val.value())
-                        if version_int >= 22000:
+                        if is_server and version_int == 26100:
+                            win_build_inferred_os = 'Windows Server 2025'
+                        elif is_server and version_int == 20348:
+                            win_build_inferred_os = 'Windows Server 2022'
+                        elif is_server and version_int == 17763:
+                            win_build_inferred_os = 'Windows Server 2019'
+                        elif is_server and version_int == 14393:
+                            win_build_inferred_os = 'Windows Server 2016'
+                        elif is_server and (version_int == 9200 or version_int == 9600):
+                            win_build_inferred_os = 'Windows Server 2012'
+                        elif is_server and version_int == 8400:
+                            win_build_inferred_os = 'Windows Home Server 2011'
+                        elif is_server and (version_int == 6001 or version_int == 6002 or version_int == 6003 or version_int == 7600 or version_int == 7601):
+                            win_build_inferred_os = 'Windows Server 2008'
+                        elif version_int >= 22000: # 22000 or 22621 or 22631 or 26100 or 26200
                             win_build_inferred_os = 'Windows 11'
                         elif version_int >= 10240:
                             win_build_inferred_os = 'Windows 10'
@@ -80,7 +96,7 @@ class WinVersion(MDPPlugin):
                             win_build_inferred_os = 'Windows 8'
                         elif version_int == 7600 or version_int == 7601:
                             win_build_inferred_os = 'Windows 7'
-                        elif version_int == 6002:
+                        elif version_int == 6000 or version_int == 6001 or version_int == 6002:
                             win_build_inferred_os = 'Windows Vista'
                         elif version_int == 2600 or version_int == 2700 or version_int == 2710 or version_int == 3790:
                             win_build_inferred_os = 'Windows XP'
@@ -88,8 +104,8 @@ class WinVersion(MDPPlugin):
                             win_build_inferred_os = 'Windows ME'
                         elif version_int == 2195:
                             win_build_inferred_os = 'Windows 2000'
-                        elif version_int == 1998:
-                            win_build_inferred_os = 'Windows 2000'
+                        elif version_int == 1998 or version_int == 2222:
+                            win_build_inferred_os = 'Windows 98'
                         elif version_int == 1057:
                             win_build_inferred_os = 'Windows NT 3.51'
                         elif version_int == 807:
