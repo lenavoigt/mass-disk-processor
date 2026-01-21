@@ -46,7 +46,8 @@ def get_current_control_set_number(files: List[FileItem]) -> Optional[int]:
     return val if isinstance(val, int) else None
 
 
-def get_registry_value(files: List[FileItem], hive_name: str, key_path: str, value_name: str) -> Optional[Any]:
+def get_registry_value(files: List[FileItem], hive_name: str, key_path: str, value_name: str,
+                       partition_prefix: Optional[str] = None) -> Optional[Any]:
     """
     Given the list of files from the disk image accessor of a traget disk image,
     finds the specified registry hive, opens the key, and returns the value.
@@ -61,6 +62,10 @@ def get_registry_value(files: List[FileItem], hive_name: str, key_path: str, val
         return None
 
     for file in files:
+        # restrict to specific partition if provided
+        if partition_prefix and not file.full_path.lower().startswith(partition_prefix.lower() + "/"):
+            continue
+
         if pattern.search(file.full_path.lower()):
             reg = _load_registry_from_file(file.read())
             if not reg:

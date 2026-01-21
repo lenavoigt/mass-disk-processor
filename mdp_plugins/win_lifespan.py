@@ -12,7 +12,7 @@ from utils.windows_registry_utils import get_registry_value
 
 class WinOSLifespan(MDPPlugin):
     name = 'win_os_lifespan'
-    description = 'Gets the installation date of Windows from Registry'
+    description = 'Gets the installation and shutdown date of (the most recent) Windows installation on the disk from Registry and estimates a lifespan based on this information.' # could also add maximum and/or total
     expected_results = [
         'windows_install_time',
         'windows_last_shutdown_time',
@@ -64,7 +64,8 @@ class WinOSLifespan(MDPPlugin):
     #
     #     return installdate
 
-    def get_win_last_shutdown(self, files):
+    # partition aware shutdown for "most recent" selection
+    def get_win_last_shutdown_for_partition(self, files, partition_prefix):
         temp_filename = 'export.bin'
         last_shutdown = None
 
@@ -126,11 +127,31 @@ class WinOSLifespan(MDPPlugin):
         disk_image = target_disk_image.accessor
         files = disk_image.files
 
-        # install_date = self.get_win_install_date(files)
-        install_time = get_registry_value(files, "SOFTWARE", "Microsoft\\Windows NT\\CurrentVersion", "InstallDate")
-        install_date = datetime.datetime.utcfromtimestamp(install_time) if install_time else None
+        # find partitions that have a SYSTEM hive, then compute values per partition, pick most recent shutdown
+        partition_ids = set()
+        for each_file in files:
+            m = re.search(r'^(P_[0-9]+)/Windows/System32/config/system$', each_file.full_path, re.IGNORECASE)
+            if m is not None:
+                partition_ids.add(m.group(1))
 
-        last_shutdown = self.get_win_last_shutdown(files)
+        chosen_install_date = None
+        chosen_last_shutdown = None
+
+        for partition_prefix in sorted(partition_ids):
+            # install_date = self.get_win_install_date(files)
+            install_time = get_registry_value(files, "SOFTWARE", "Microsoft\\Windows NT\\CurrentVersion", "InstallDate", partition_prefix=partition_prefix)
+            install_date = datetime.datetime.utcfromtimestamp(install_time) if install_time else None
+
+            last_shutdown = self.get_win_last_shutdown_for_partition(files, partition_prefix)
+
+            # pick most recent shutdown, matching install time from same partition (do not discard negative...)
+            if install_date and last_shutdown:
+                if chosen_last_shutdown is None or last_shutdown > chosen_last_shutdown:
+                    chosen_last_shutdown = last_shutdown
+                    chosen_install_date = install_date
+
+        install_date = chosen_install_date
+        last_shutdown = chosen_last_shutdown
 
         install_str = str(install_date) if install_date else None
         shutdown_str = str(last_shutdown) if last_shutdown else None
@@ -146,8 +167,7 @@ class WinOSLifespan(MDPPlugin):
 
         if install_date and last_shutdown:
             diff_datetime = last_shutdown - install_date
-            result_values[
-                'win_os_lifetime'] = diff_datetime.days * 24 * 3600 + diff_datetime.seconds  # might be able to replace with .total_seconds()
+            result_values['win_os_lifetime'] = str(int(diff_datetime.total_seconds()))
             result_values['win_os_lifetime_str'] = str(diff_datetime)
         else:
             result_values['win_os_lifetime'] = None
