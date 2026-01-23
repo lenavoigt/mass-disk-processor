@@ -7,7 +7,7 @@ from mdp_lib.mdp_plugin import MDPPlugin
 class EstimateOS(MDPPlugin):
     name = 'operating_system'
     description = 'Check for OS present'
-    expected_results = ['windows_found', 'linux_found', 'mac_found']
+    expected_results = ['windows_found', 'linux_found', 'mac_found', 'ios_backup_found']
 
     def process_disk(self, target_disk_image: TargetDiskImage):
         disk_image = target_disk_image.accessor
@@ -16,6 +16,7 @@ class EstimateOS(MDPPlugin):
         win_found = False
         lin_found = False
         mac_found = False
+        ios_backup_found = False
 
         # This is a very basic approach and a more advanced version of this could be written
         for each_file in files:
@@ -31,11 +32,17 @@ class EstimateOS(MDPPlugin):
                 lin_found = True
                 # print('Linux found')
 
+            if re.search('HomeDomain', each_file.full_path, re.IGNORECASE) is not None:
+                ios_backup_found = True
+                # print('iOS (backup) found')
+
+
         result = self.create_result(target_disk_image)
         self.set_results(result, {
             'windows_found': str(win_found),  # multiple os can be reported if they are present
             'linux_found': str(lin_found),
-            'mac_found': str(mac_found)
+            'mac_found': str(mac_found),
+            'ios_backup_found': str(ios_backup_found)
         })
 
         return result
