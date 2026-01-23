@@ -3,6 +3,7 @@ import logging
 from marple.disk_access_raw import RawDiskAccessor
 from marple.disk_access_ewf import EwfDiskAccessor
 from marple.disk_access_ios_backup import iOSBackupAccessor, is_ios_backup, iOSBackupError
+from marple.disk_access_tar import TarAccessor, is_tar_archive, TarAccessorError
 
 class DiskAccessorError(Exception):
     pass
@@ -27,6 +28,15 @@ def get_disk_accessor(path_to_disk_image):
     # For file-based disk images
     if not os.path.isfile(path_to_disk_image):
         raise DiskAccessorError(f"Path is not a file or iOS backup: {path_to_disk_image}")
+
+    # Check if this is a tar archive (by extension)
+    if is_tar_archive(path_to_disk_image):
+        try:
+            disk_accessor = TarAccessor(path_to_disk_image)
+            return disk_accessor
+        except TarAccessorError as e:
+            logging.warning(f"Could not open tar archive: {e}")
+            raise DiskAccessorError(f"Tar archive error: {e}")
 
     f = open(path_to_disk_image, 'rb')
     sector = f.read(512)
