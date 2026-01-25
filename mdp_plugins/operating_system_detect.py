@@ -74,7 +74,15 @@ class EstimateOS(MDPPlugin):
                 system_version_file = each_file
 
             # iOS Backup structure (from iTunes/Finder backups)
+            # Decoded backup paths have HomeDomain/, AppDomain/, etc.
             if re.search(r'HomeDomain/', path, re.IGNORECASE):
+                ios_backup_found = True
+            if re.search(r'AppDomain/', path, re.IGNORECASE):
+                ios_backup_found = True
+            # Raw backup structure has Manifest.db and Manifest.plist at root
+            if re.search(r'^/Manifest\.db$', path, re.IGNORECASE):
+                ios_backup_found = True
+            if re.search(r'^/Manifest\.plist$', path, re.IGNORECASE):
                 ios_backup_found = True
 
             # iOS Full Filesystem indicators (not in macOS)
