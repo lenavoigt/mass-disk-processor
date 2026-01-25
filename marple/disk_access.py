@@ -4,6 +4,7 @@ from marple.disk_access_raw import RawDiskAccessor
 from marple.disk_access_ewf import EwfDiskAccessor
 from marple.disk_access_ios_backup import iOSBackupAccessor, is_ios_backup, iOSBackupError
 from marple.disk_access_tar import TarAccessor, is_tar_archive, TarAccessorError
+from marple.disk_access_zip import ZipAccessor, is_zip_archive, ZipAccessorError
 
 class DiskAccessorError(Exception):
     pass
@@ -37,6 +38,15 @@ def get_disk_accessor(path_to_disk_image):
         except TarAccessorError as e:
             logging.warning(f"Could not open tar archive: {e}")
             raise DiskAccessorError(f"Tar archive error: {e}")
+
+    # Check if this is a zip archive (by extension)
+    if is_zip_archive(path_to_disk_image):
+        try:
+            disk_accessor = ZipAccessor(path_to_disk_image)
+            return disk_accessor
+        except ZipAccessorError as e:
+            logging.warning(f"Could not open zip archive: {e}")
+            raise DiskAccessorError(f"Zip archive error: {e}")
 
     f = open(path_to_disk_image, 'rb')
     sector = f.read(512)
