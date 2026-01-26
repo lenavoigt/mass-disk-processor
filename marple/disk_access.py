@@ -5,6 +5,8 @@ from marple.disk_access_ewf import EwfDiskAccessor
 from marple.disk_access_ios_backup import iOSBackupAccessor, is_ios_backup, iOSBackupError
 from marple.disk_access_tar import TarAccessor, is_tar_archive, TarAccessorError
 from marple.disk_access_zip import ZipAccessor, is_zip_archive, ZipAccessorError
+from marple.disk_access_android_backup import AndroidBackupAccessor, is_android_backup, AndroidBackupError
+from marple.disk_access_directory import DirectoryAccessor, is_raw_directory, DirectoryAccessorError
 
 class DiskAccessorError(Exception):
     pass
@@ -26,9 +28,18 @@ def get_disk_accessor(path_to_disk_image):
             logging.warning(f"Could not open iOS backup: {e}")
             raise DiskAccessorError(f"iOS backup error: {e}")
 
+    # Check if this is a raw directory (not iOS backup)
+    if is_raw_directory(path_to_disk_image):
+        try:
+            disk_accessor = DirectoryAccessor(path_to_disk_image)
+            return disk_accessor
+        except DirectoryAccessorError as e:
+            logging.warning(f"Could not open directory: {e}")
+            raise DiskAccessorError(f"Directory error: {e}")
+
     # For file-based disk images
     if not os.path.isfile(path_to_disk_image):
-        raise DiskAccessorError(f"Path is not a file or iOS backup: {path_to_disk_image}")
+        raise DiskAccessorError(f"Path is not a file or supported directory: {path_to_disk_image}")
 
     # Check if this is a tar archive (by extension)
     if is_tar_archive(path_to_disk_image):
@@ -47,6 +58,15 @@ def get_disk_accessor(path_to_disk_image):
         except ZipAccessorError as e:
             logging.warning(f"Could not open zip archive: {e}")
             raise DiskAccessorError(f"Zip archive error: {e}")
+
+    # Check if this is an Android backup (.ab file)
+    if is_android_backup(path_to_disk_image):
+        try:
+            disk_accessor = AndroidBackupAccessor(path_to_disk_image)
+            return disk_accessor
+        except AndroidBackupError as e:
+            logging.warning(f"Could not open Android backup: {e}")
+            raise DiskAccessorError(f"Android backup error: {e}")
 
     f = open(path_to_disk_image, 'rb')
     sector = f.read(512)

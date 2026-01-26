@@ -98,6 +98,14 @@ class EstimateOS(MDPPlugin):
                 android_found = True
             if re.search(r'data/data/com\.android\.', path, re.IGNORECASE):
                 android_found = True
+            # Android backup structure (adb backup creates /apps/com.android.* paths)
+            if re.search(r'^/apps/com\.android\.', path, re.IGNORECASE):
+                android_found = True
+            if re.search(r'^/apps/com\.google\.android\.', path, re.IGNORECASE):
+                android_found = True
+            # Android SD card structure (/Android/data/com.* is app external storage)
+            if re.search(r'^/Android/data/com\.', path, re.IGNORECASE):
+                android_found = True
 
             # Linux indicators (but not if Android is found)
             if re.search(r'/etc/os-release$', path, re.IGNORECASE):
