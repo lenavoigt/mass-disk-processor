@@ -60,33 +60,29 @@ class FileItem(object):
 
     # default size limit for calculating a hash is 100MB
     def populate_hash_and_signature_field(self, signature_size=8,hash_size_limit=100000000, fs_handle=None):
-        self.populate_signature_field(fs_handle=fs_handle)
+        self.populate_signature_field(signature_size=signature_size,fs_handle=fs_handle)
         if self.file_size <= hash_size_limit:
-            print(f'Hashing file of size {self.file_size} at {time.time()}')
-            self.__bytes_read = 0
+            # print(f'Hashing file of size {self.file_size} at {time.time()}')
             sha1 = hashlib.sha1()
 
-            # full file hashing at once
-            # data = self.read(fs_handle=fs_handle)
-            # sha1.update(data)
-            # self.sha1 = sha1.hexdigest()
-
             # chunkwise hashing to not load big files in memory as whole
-            chunk_size = 1024
+            chunk_size = 4 * 1024 * 1024  # 4 MiB
+            file_obj = fs_handle.open_meta(self.inode)
+            offset = 0
+            size = self.file_size
+            while offset < size:
+                to_read = min(chunk_size, size - offset)
+                chunk = file_obj.read_random(offset, to_read)
 
-            while True:
-                chunk = self.read(chunk_size,fs_handle)
                 if not chunk:
+                    # some failure
                     break
+
                 sha1.update(chunk)
+                offset += len(chunk)
 
+            # TODO: might get partial hashes in case of failure
             self.sha1 = sha1.hexdigest()
-
-        # # Testing
-        # print(self.sha1)
-        # f = open('temp_filename.bin', 'wb')
-        # f.write(self.read())
-        # f.close()
 
 
     def read(self, size_to_read=None, fs_handle=None):
